@@ -7,7 +7,7 @@
 How to develop for Fail2Ban
 ================================================================================
 
-Fail2Ban uses GIT (http://git-scm.com/) distributed source control. This gives
+Fail2Ban uses GIT (https://git-scm.com/) distributed source control. This gives
 each developer their own complete copy of the entire repository. Developers can
 add and switch branches and commit changes when ever they want and then ask a
 maintainer to merge their changes.
