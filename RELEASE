@@ -12,17 +12,17 @@ Preparation
 
 * Check distribution patches and see if they can be included
 
-  * https://apps.fedoraproject.org/packages/fail2ban/sources
+  * https://src.fedoraproject.org/rpms/fail2ban
   * http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/net-analyzer/fail2ban/
   * http://svnweb.freebsd.org/ports/head/security/py-fail2ban/
-  * https://build.opensuse.org/package/show?package=fail2ban&project=openSUSE%3AFactory
+  * https://build.opensuse.org/package/show/security/fail2ban
   * http://sophie.zarb.org/sources/fail2ban (Mageia)
   * https://trac.macports.org/browser/trunk/dports/security/fail2ban
 
 
 * Check distribution outstanding bugs
 
-  * https://github.com/fail2ban/fail2ban/issues?sort=updated&state=open
+  * https://github.com/fail2ban/fail2ban/issues?q=is%3Aopen+sort%3Aupdated-desc
   * http://bugs.debian.org/cgi-bin/pkgreport.cgi?dist=unstable;package=fail2ban
   * https://bugs.launchpad.net/ubuntu/+source/fail2ban
   * http://bugs.sabayon.org/buglist.cgi?quicksearch=net-analyzer%2Ffail2ban
