@@ -48,7 +48,8 @@ Test cases should cover all usual cases, all exception cases and all inside
 / outside boundary conditions.
 
 Test cases should cover all branches. The coverage tool will help identify
-missing branches. Also see http://nedbatchelder.com/code/coverage/branch.html
+missing branches. Also see 
+https://coverage.readthedocs.io/en/latest/branch.html 
 for more details.
 
 Install the package python-coverage to visualise your test coverage. Run the
