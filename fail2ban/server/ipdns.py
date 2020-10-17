@@ -309,7 +309,7 @@ class IPAddr(object):
 
 				# mask out host portion if prefix length is supplied
 				if cidr is not None and cidr >= 0:
-					mask = ~(0xFFFFFFFFL >> cidr)
+					mask = ~(0xFFFFFFFF >> cidr)
 					self._addr &= mask
 					self._plen = cidr
 
