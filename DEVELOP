@@ -7,7 +7,7 @@
 How to develop for Fail2Ban
 ================================================================================
 
-Fail2Ban uses GIT (http://git-scm.com/) distributed source control. This gives
+Fail2Ban uses GIT (https://git-scm.com/) distributed source control. This gives
 each developer their own complete copy of the entire repository. Developers can
 add and switch branches and commit changes when ever they want and then ask a
 maintainer to merge their changes.
@@ -19,7 +19,7 @@ well as a web-based Git repository browser and an issue tracker.
 If you are familiar with Python and you have a bug fix or a feature that you
 would like to add to Fail2Ban, the best way to do so it to use the GitHub Pull
 Request feature. You can find more details on the Fail2Ban wiki
-(http://www.fail2ban.org/wiki/index.php/Get_Involved)
+(https://github.com/fail2ban/fail2ban/wiki)
 
 Pull Requests
 =============
@@ -48,7 +48,8 @@ Test cases should cover all usual cases, all exception cases and all inside
 / outside boundary conditions.
 
 Test cases should cover all branches. The coverage tool will help identify
-missing branches. Also see http://nedbatchelder.com/code/coverage/branch.html
+missing branches. Also see 
+https://coverage.readthedocs.io/en/latest/branch.html 
 for more details.
 
 Install the package python-coverage to visualise your test coverage. Run the

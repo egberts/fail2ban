@@ -167,7 +167,7 @@ can have sections INCLUDES (optional) and Definition as follows::
 
 This is also documented in the man page jail.conf (section 5). Other definitions
 can be added to make failregex's more readable and maintainable to be used
-through string Interpolations (see http://docs.python.org/2.7/library/configparser.html)
+through string Interpolations (see https://docs.python.org/library/configparser.html)
 
 
 General rules
@@ -235,13 +235,14 @@ The following general rules apply to regular expressions:
 * ensure regexes start with a ^ and are as restrictive as possible. E.g. do not
   use .* if \d+ is sufficient;
 * use functionality of Python regexes defined in the standard Python re library
-  http://docs.python.org/2/library/re.html;
+  https://docs.python.org/library/re.html;
 * make regular expressions readable (as much as possible). E.g.
   (?:...) represents a non-capturing regex but (...) is more readable, thus
   preferred.
 
 If you have only a basic knowledge of regular repressions we advise to read
-http://docs.python.org/2/library/re.html first.  It doesn't take long and would
+https://docs.python.org/library/re.html
+first.  It doesn't take long and would
 remind you e.g. which characters you need to escape and which you don't.
 
 Developing/testing a regex
@@ -273,7 +274,7 @@ Take note of  -l heavydebug  / -l debug  and -v as they might be very useful.
      Some applications log spaces at the end. If you are not sure add \s*$ as
      the end part of the regex.
 
-If your regex is not matching, http://www.debuggex.com/?flavor=python can help
+If your regex is not matching, https://www.debuggex.com/?flavor=python can help
 to tune it.  fail2ban-regex -D ...  will present Debuggex URLs for the regexs
 and sample log files that you pass into it.
 
@@ -370,8 +371,9 @@ banned.
 
 2. Unanchored regex can match other user injected data
 
-From the Apache vulnerability CVE-2013-2178
-( original ref: https://vndh.net/note:fail2ban-089-denial-service ).
+From the Apache vulnerability
+[CVE-2013-2178](https://nvd.nist.gov/vuln/detail/CVE-2013-2178)
+(original ref (broken, not archived): hxxps://vndh.net/note:fail2ban-089-denial-service ).
 
 An example bad regex for Apache::
 
