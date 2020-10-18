@@ -20,6 +20,7 @@
 # Author: Cyril Jaquier
 # 
 
+from builtins import object
 __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier"
 __license__ = "GPL"
@@ -32,7 +33,7 @@ from ..helpers import getLogger
 logSys = getLogger(__name__)
 
 
-class Configurator:
+class Configurator(object):
 	
 	def __init__(self, force_enable=False, share_config=None):
 		self.__settings = dict()

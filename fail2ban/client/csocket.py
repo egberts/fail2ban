@@ -20,6 +20,10 @@
 # Author: Cyril Jaquier
 # 
 
+from builtins import str
+from builtins import map
+from past.builtins import basestring
+from builtins import object
 __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier"
 __license__ = "GPL"
@@ -30,7 +34,7 @@ from ..protocol import CSPROTO
 import socket
 import sys
 
-class CSocket:
+class CSocket(object):
 	
 	def __init__(self, sock="/var/run/fail2ban/fail2ban.sock", timeout=-1):
 		# Create an INET, STREAMing socket
@@ -47,7 +51,7 @@ class CSocket:
 	
 	def send(self, msg, nonblocking=False, timeout=None):
 		# Convert every list member to string
-		obj = dumps(map(CSocket.convert, msg), HIGHEST_PROTOCOL)
+		obj = dumps(list(map(CSocket.convert, msg)), HIGHEST_PROTOCOL)
 		self.__csock.send(obj)
 		self.__csock.send(CSPROTO.END)
 		return self.receive(self.__csock, nonblocking, timeout)

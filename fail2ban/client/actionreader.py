@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # Author: Cyril Jaquier
-# 
+#
 
 __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier"
@@ -36,69 +36,69 @@ logSys = getLogger(__name__)
 
 class ActionReader(DefinitionInitConfigReader):
 
-	_configOpts = {
-		"actionstart": ["string", None],
-		"actionstart_on_demand": ["bool", None],
-		"actionstop": ["string", None],
-		"actionflush": ["string", None],
-		"actionreload": ["string", None],
-		"actioncheck": ["string", None],
-		"actionrepair": ["string", None],
-		"actionrepair_on_unban": ["bool", None],
-		"actionban": ["string", None],
-		"actionprolong": ["string", None],
-		"actionreban": ["string", None],
-		"actionunban": ["string", None],
-		"norestored": ["bool", None],
-	}
+    _configOpts = {
+        "actionstart": ["string", None],
+        "actionstart_on_demand": ["bool", None],
+        "actionstop": ["string", None],
+        "actionflush": ["string", None],
+        "actionreload": ["string", None],
+        "actioncheck": ["string", None],
+        "actionrepair": ["string", None],
+        "actionrepair_on_unban": ["bool", None],
+        "actionban": ["string", None],
+        "actionprolong": ["string", None],
+        "actionreban": ["string", None],
+        "actionunban": ["string", None],
+        "norestored": ["bool", None],
+    }
 
-	def __init__(self, file_, jailName, initOpts, **kwargs):
-		# always supply jail name as name parameter if not specified in options:
-		n = initOpts.get("name")
-		if n is None:
-			initOpts["name"] = n = jailName
-		actname = initOpts.get("actname")
-		if actname is None:
-			actname = file_
-			# ensure we've unique action name per jail:
-			if n != jailName:
-				actname += n[len(jailName):] if n.startswith(jailName) else '-' + n
-			initOpts["actname"] = actname
-		self._name = actname
-		DefinitionInitConfigReader.__init__(
-			self, file_, jailName, initOpts, **kwargs)
+    def __init__(self, file_, jailName, initOpts, **kwargs):
+        # always supply jail name as name parameter if not specified in options:
+        n = initOpts.get("name")
+        if n is None:
+            initOpts["name"] = n = jailName
+        actname = initOpts.get("actname")
+        if actname is None:
+            actname = file_
+            # ensure we've unique action name per jail:
+            if n != jailName:
+                actname += n[len(jailName):] if n.startswith(jailName) else '-' + n
+            initOpts["actname"] = actname
+        self._name = actname
+        DefinitionInitConfigReader.__init__(
+            self, file_, jailName, initOpts, **kwargs)
 
-	def setFile(self, fileName):
-		self.__file = fileName
-		DefinitionInitConfigReader.setFile(self, os.path.join("action.d", fileName))
-	
-	def getFile(self):
-		return self.__file
+    def setFile(self, fileName):
+        self.__file = fileName
+        DefinitionInitConfigReader.setFile(self, os.path.join("action.d", fileName))
 
-	def setName(self, name):
-		self._name = name
+    def getFile(self):
+        return self.__file
 
-	def getName(self):
-		return self._name
+    def setName(self, name):
+        self._name = name
 
-	def convert(self):
-		opts = self.getCombined(
-			ignore=CommandAction._escapedTags | set(('timeout', 'bantime')))
-		# stream-convert:
-		head = ["set", self._jailName]
-		stream = list()
-		stream.append(head + ["addaction", self._name])
-		multi = []
-		for opt, optval in opts.iteritems():
-			if opt in self._configOpts and not opt.startswith('known/'):
-				multi.append([opt, optval])
-		if self._initOpts:
-			for opt, optval in self._initOpts.iteritems():
-				if opt not in self._configOpts and not opt.startswith('known/'):
-					multi.append([opt, optval])
-		if len(multi) > 1:
-			stream.append(["multi-set", self._jailName, "action", self._name, multi])
-		elif len(multi):
-			stream.append(["set", self._jailName, "action", self._name] + multi[0])
+    def getName(self):
+        return self._name
 
-		return stream
+    def convert(self):
+        opts = self.getCombined(
+            ignore=CommandAction._escapedTags | set(('timeout', 'bantime')))
+        # stream-convert:
+        head = ["set", self._jailName]
+        stream = list()
+        stream.append(head + ["addaction", self._name])
+        multi = []
+        for opt, optval in list(opts.items()):
+            if opt in self._configOpts and not opt.startswith('known/'):
+                multi.append([opt, optval])
+        if self._initOpts:
+            for opt, optval in list(self._initOpts.items()):
+                if opt not in self._configOpts and not opt.startswith('known/'):
+                    multi.append([opt, optval])
+        if len(multi) > 1:
+            stream.append(["multi-set", self._jailName, "action", self._name, multi])
+        elif len(multi):
+            stream.append(["set", self._jailName, "action", self._name] + multi[0])
+
+        return stream

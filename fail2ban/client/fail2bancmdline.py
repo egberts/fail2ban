@@ -1,3 +1,4 @@
+from __future__ import print_function
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: t -*-
 # vi: set ft=python sts=4 ts=4 sw=4 noet :
 #
@@ -16,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Fail2Ban; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+from builtins import object
 __author__ = "Fail2Ban Developers"
 __copyright__ = "Copyright (c) 2004-2008 Cyril Jaquier, 2012-2014 Yaroslav Halchenko, 2014-2016 Serg G. Brester"
 __license__ = "GPL"
@@ -47,7 +49,7 @@ PRODUCTION = True
 MAX_WAITTIME = 30
 
 
-class Fail2banCmdLine():
+class Fail2banCmdLine(object):
 
 	def __init__(self):
 		self._argv = self._args = None
