@@ -1,4 +1,6 @@
 # This file is part of Fail2Ban.
+
+from __future__ import print_function
 """
 Protocol aspect of fail2ban
 """
@@ -24,7 +26,6 @@ __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier"
 __license__ = "GPL"
 
-from __future__ import print_function
 import textwrap
 
 def output(s):
