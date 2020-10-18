@@ -17,6 +17,9 @@
 # along with Fail2Ban; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from builtins import str
+from builtins import map
+from builtins import object
 __author__ = "Cyril Jaquier, Yaroslav Halchenko"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2013- Yaroslav Halchenko"
 __license__ = "GPL"
@@ -34,7 +37,7 @@ logSys = getLogger(__name__)
 # Fail2ban server only return unformatted return codes which need to be
 # converted into user readable messages.
 
-class Beautifier:
+class Beautifier(object):
 
 	def __init__(self, cmd = None):
 		self.__inputCmd = cmd

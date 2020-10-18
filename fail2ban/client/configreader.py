@@ -20,13 +20,17 @@
 # Author: Cyril Jaquier
 # Modified by: Yaroslav Halchenko (SafeConfigParserWithIncludes)
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import filter
+from builtins import object
 __author__ = "Cyril Jaquier, Yaroslav Halchenko, Serg G. Brester (aka sebres)"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2007 Yaroslav Halchenko, 2015 Serg G. Brester (aka sebres)"
 __license__ = "GPL"
 
 import glob
 import os
-from ConfigParser import NoOptionError, NoSectionError
+from configparser import NoOptionError, NoSectionError
 
 from .configparserinc import sys, SafeConfigParserWithIncludes, logLevel
 from ..helpers import getLogger, _as_bool, _merge_dicts, substituteRecursiveTags
@@ -59,7 +63,7 @@ def _OptionsTemplateGen(options):
 			yield opttype, optname, optvalue
 
 
-class ConfigReader():
+class ConfigReader(object):
 	"""Generic config reader class.
 
 	A caching adapter which automatically reuses already shared configuration.
@@ -221,7 +225,7 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
 		config_files += sorted(glob.glob('%s/*.local' % config_dir))
 
 		# choose only existing ones
-		config_files = filter(os.path.exists, config_files)
+		config_files = list(filter(os.path.exists, config_files))
 
 		if len(config_files):
 			# at least one config exists and accessible
