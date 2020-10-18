@@ -75,7 +75,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
 
     def __ping(self, timeout=0.1):
         return self.__processCmd([["ping"] + ([timeout] if timeout != -1 else [])],
-            False, timeout=timeout)
+            False, timeout=float(timeout))
 
     @property
     def beautifier(self):
@@ -84,7 +84,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
         self._beautifier = Beautifier()
         return self._beautifier
 
-    def __processCmd(self, cmd, showRet=True, timeout=-1):
+    def __processCmd(self, cmd, showRet=True, timeout=-1.0):
         client = None
         try:
             beautifier = self.beautifier
