@@ -46,6 +46,7 @@ TEST_FILES_DIR = os.path.join(os.path.dirname(__file__), "files")
 
 DEV_NULL = None
 
+
 def _Fail2banRegex(*args):
     parser = get_opt_parser()
     (opts, args) = parser.parse_args(list(args))
@@ -54,14 +55,17 @@ def _Fail2banRegex(*args):
         logSys.setLevel(str2LogLevel(opts.log_level))
     return (opts, args, Fail2banRegex(opts))
 
+
 def _test_exec(*args):
     (opts, args, fail2banRegex) = _Fail2banRegex(*args)
     return fail2banRegex.start(args)
+
 
 class ExitException(Exception):
     def __init__(self, code):
         self.code = code
         self.msg = 'Exit with code: %s' % code
+
 
 def _test_exec_command_line(*args):
     def _exit(code=0):
@@ -70,7 +74,8 @@ def _test_exec_command_line(*args):
     _org = {'exit': sys.exit, 'stdout': sys.stdout, 'stderr': sys.stderr}
     _exit_code = 0
     sys.exit = _exit
-    if not DEV_NULL: DEV_NULL = open(os.devnull, "w")
+    if not DEV_NULL:
+        DEV_NULL = open(os.devnull, "w")
     sys.stderr = sys.stdout = DEV_NULL
     try:
         exec_command_line(list(args))
@@ -82,10 +87,13 @@ def _test_exec_command_line(*args):
         sys.stderr = _org['stderr']
     return _exit_code
 
+
 STR_00 = "Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 192.0.2.0"
 STR_00_NODT = "[sshd] error: PAM: Authentication failure for kevin from 192.0.2.0"
 
-RE_00 = r"(?:(?:Authentication failure|Failed [-/\w+]+) for(?: [iI](?:llegal|nvalid) user)?|[Ii](?:llegal|nvalid) user|ROOT LOGIN REFUSED) .*(?: from|FROM) <HOST>"
+RE_00 = r"(?:(?:Authentication failure|Failed [-/\w+]+) "
+        r"for(?: [iI](?:llegal|nvalid) user)?|[Ii](?:llegal|nvalid) "
+        r"user|ROOT LOGIN REFUSED) .*(?: from|FROM) <HOST>"
 RE_00_ID = r"Authentication failure for <F-ID>.*?</F-ID> from <ADDR>$"
 RE_00_USER = r"Authentication failure for <F-USER>.*?</F-USER> from <ADDR>$"
 
