@@ -30,7 +30,10 @@ else:
 
 from ..dummyjail import DummyJail
 
-from ..utils import CONFIG_DIR, asyncserver, Utils, uni_decode
+from ..utils import CONFIG_DIR
+from ..utils import asyncserver
+from ..utils import Utils
+from ..utils import uni_decode
 
 
 class TestSMTPServer(smtpd.SMTPServer):

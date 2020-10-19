@@ -1,9 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: t -*-
 # vi: set ft=python sts=4 ts=4 sw=4 noet :
 
-from builtins import filter
-from builtins import object
-
 from future import standard_library
 
 # This file is part of Fail2Ban.
@@ -23,7 +20,9 @@ from future import standard_library
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # Author: Cyril Jaquier
 # Modified by: Yaroslav Halchenko (SafeConfigParserWithIncludes)
-standard_library.install_aliases()
+
+from builtins import filter
+from builtins import object
 
 import os
 import glob
@@ -31,6 +30,7 @@ import glob
 from configparser import NoOptionError, NoSectionError
 from .configparserinc import SafeConfigParserWithIncludes
 from ..helpers import getLogger, _as_bool, _merge_dicts, substituteRecursiveTags
+standard_library.install_aliases()
 
 __author__ = "Cyril Jaquier, Yaroslav Halchenko, Serg G. Brester (aka sebres)"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2007 Yaroslav Halchenko, 2015 Serg G. Brester (aka sebres)"
@@ -257,6 +257,7 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
                             ][bool(len(config_files))]
                         )
                 )
+            )
 
             return False
 
@@ -284,7 +285,8 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
                 if convert:
                     conv = CONVERTER.get(opttype)
                     if conv:
-                        if v is None: continue
+                        if v is None:
+                            continue
                         values[optname] = conv(v)
             except NoSectionError as e:
                 if shouldExist:
@@ -294,7 +296,7 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
                 values[optname] = optvalue
             # TODO: validate error handling here.
             except NoOptionError:
-                if not optvalue is None:
+                if optvalue is not None:
                     logSys.warning("'%s' not defined in '%s'. Using default one: %r"
                                    % (optname, sec, optvalue))
                     values[optname] = optvalue
@@ -365,19 +367,23 @@ class DefinitionInitConfigReader(ConfigReader):
             # get only own options (without options from default):
             getopt = lambda opt: self.get("Init", opt)
             for opt in self.options("Init", withDefault=False):
-                if opt == '__name__': continue
+                if opt == '__name__':
+                    continue
                 v = None
                 if not opt.startswith('known/'):
-                    if v is None: v = getopt(opt)
+                    if v is None:
+                        v = getopt(opt)
                     self._initOpts['known/' + opt] = v
                 if opt not in self._initOpts:
-                    if v is None: v = getopt(opt)
+                    if v is None:
+                        v = getopt(opt)
                     self._initOpts[opt] = v
         if all and self.has_section("Definition"):
             # merge with all definition options (and options from default),
             # bypass already converted option (so merge only new options):
             for opt in self.options("Definition"):
-                if opt == '__name__' or opt in self._opts: continue
+                if opt == '__name__' or opt in self._opts:
+                    continue
                 self._opts[opt] = self.get("Definition", opt)
 
     def convertOptions(self, opts, configOpts):
@@ -387,7 +393,8 @@ class DefinitionInitConfigReader(ConfigReader):
             conv = CONVERTER.get(opttype)
             if conv:
                 v = opts.get(optname)
-                if v is None: continue
+                if v is None:
+                    continue
                 try:
                     opts[optname] = conv(v)
                 except ValueError:

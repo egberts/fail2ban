@@ -91,8 +91,8 @@ def _test_exec_command_line(*args):
 STR_00 = "Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 192.0.2.0"
 STR_00_NODT = "[sshd] error: PAM: Authentication failure for kevin from 192.0.2.0"
 
-RE_00 = r"(?:(?:Authentication failure|Failed [-/\w+]+) "
-        r"for(?: [iI](?:llegal|nvalid) user)?|[Ii](?:llegal|nvalid) "
+RE_00 = r"(?:(?:Authentication failure|Failed [-/\w+]+) " + \
+        r"for(?: [iI](?:llegal|nvalid) user)?|[Ii](?:llegal|nvalid) " + \
         r"user|ROOT LOGIN REFUSED) .*(?: from|FROM) <HOST>"
 RE_00_ID = r"Authentication failure for <F-ID>.*?</F-ID> from <ADDR>$"
 RE_00_USER = r"Authentication failure for <F-USER>.*?</F-USER> from <ADDR>$"

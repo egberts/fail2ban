@@ -9,11 +9,12 @@ class TestAction(ActionBase):
             "ban ainfo %s, %s, %s, %s",
             aInfo["ipmatches"] != '',
             aInfo["ipjailmatches"] != '',
-            Info["ipfailures"] > 0
+            aInfo["ipfailures"] > 0,
             aInfo["ipjailfailures"] > 0
         )
 
     def unban(self, aInfo):
         pass
+
 
 Action = TestAction

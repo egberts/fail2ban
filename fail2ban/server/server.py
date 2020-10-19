@@ -200,7 +200,7 @@ class Server(object):
         try:
             logSys.debug("Remove PID file %s", pidfile)
             os.remove(pidfile)
-        except (OSError, IOError) as e: # pragma: no cover
+        except (OSError, IOError) as e:  # pragma: no cover
             logSys.error("Unable to remove PID file: %s", e)
 
     def quit(self):
@@ -877,7 +877,7 @@ class Server(object):
             # PGID.
             pid = os.fork()
         except OSError as e:
-            return (False, (e.errno, e.strerror))    # ERROR (return a tuple)
+            return False, (e.errno, e.strerror)    # ERROR (return a tuple)
 
         if pid == 0:       # The first child.
 
@@ -898,9 +898,9 @@ class Server(object):
                 # preventing the daemon from ever acquiring a controlling terminal.
                 pid = os.fork()     # Fork a second child.
             except OSError as e:
-                return (False, (e.errno, e.strerror))  # ERROR (return a tuple)
+                return False, (e.errno, e.strerror)  # ERROR (return a tuple)
 
-            if (pid == 0):    # The second child.
+            if pid == 0:    # The second child.
                 # Ensure that the daemon doesn't keep any directory in use.  Failure
                 # to do this could make a filesystem unmountable.
                 os.chdir("/")
@@ -936,7 +936,7 @@ class Server(object):
         os.open("/dev/null", os.O_RDONLY)   # standard input (0)
         os.open("/dev/null", os.O_RDWR)     # standard output (1)
         os.open("/dev/null", os.O_RDWR)     # standard error (2)
-        return (True,)
+        return True,
 
 
 class ServerInitializationError(Exception):
