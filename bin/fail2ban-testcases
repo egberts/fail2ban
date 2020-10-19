@@ -24,10 +24,8 @@ __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2012- Yaroslav Halchenko"
 __license__ = "GPL"
 
-import logging
 import os
 import sys
-import time
 import unittest
 
 # Check if local fail2ban module exists, and use if it exists by
@@ -35,7 +33,6 @@ import unittest
 # environment.
 if os.path.exists("fail2ban/__init__.py"):
 	sys.path.insert(0, ".")
-from fail2ban.version import version
 
 from fail2ban.tests.utils import getOptParser, initProcess, gatherTests
 from fail2ban.setup import updatePyExec
@@ -67,5 +64,5 @@ testRunner = unittest.TextTestRunner(verbosity=verbosity)
 
 tests_results = testRunner.run(tests)
 
-if not tests_results.wasSuccessful(): # pragma: no cover
+if not tests_results.wasSuccessful():  # pragma: no cover
 	sys.exit(1)

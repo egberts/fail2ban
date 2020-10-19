@@ -185,7 +185,7 @@ class Fail2banRegexTest(LogCaptureTestCase):
         ))
         self.assertLogged('Lines: 19 lines, 0 ignored, 16 matched, 3 missed')
 
-        self.assertLogged('Error decoding line');
+        self.assertLogged('Error decoding line')
         self.assertLogged('Continuing to process line ignoring invalid characters')
 
         self.assertLogged('Dez 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 193.168.0.128')

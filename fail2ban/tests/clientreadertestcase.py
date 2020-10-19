@@ -444,34 +444,71 @@ class JailReaderTest(LogCaptureTestCase):
 
         # And multiple groups (`][` instead of `,`)
         result = extractOptions(option.replace(',', ']['))
-        expected2 = (expected[0],
-                     dict((k, v.replace(',', '][')) for k, v in list(expected[1].items()))
+        expected2 = (
+            expected[0],
+            dict(
+                (k, v.replace(',', ']['))
+                for k, v in list(expected[1].items())
+            )
         )
         self.assertEqual(expected2, result)
 
     def testMultiLineOption(self):
-        jail = JailReader('multi-log', force_enable=True, basedir=IMPERFECT_CONFIG, share_config=IMPERFECT_CONFIG_SHARE_CFG)
+        jail = JailReader(
+            'multi-log',
+            force_enable=True,
+            basedir=IMPERFECT_CONFIG,
+            share_config=IMPERFECT_CONFIG_SHARE_CFG)
         self.assertTrue(jail.read())
         self.assertTrue(jail.getOptions())
         self.assertEqual(jail.options['logpath'], 'a.log\nb.log\nc.log')
-        self.assertEqual(jail.options['action'], 'action[actname=\'ban\']\naction[actname=\'log\', logpath="a.log\nb.log\nc.log\nd.log"]\naction[actname=\'test\']')
-        self.assertSortedEqual([a.convert() for a in jail._JailReader__actions], [
-            [['set', 'multi-log', 'addaction', 'ban'], ['multi-set', 'multi-log', 'action', 'ban', [
-                ['actionban', 'echo "name: ban, ban: <ip>, logs: a.log\nb.log\nc.log"'],
-                ['actname', 'ban'],
-                ['name', 'multi-log']
-            ]]],
-            [['set', 'multi-log', 'addaction', 'log'], ['multi-set', 'multi-log', 'action', 'log', [
-                ['actionban', 'echo "name: log, ban: <ip>, logs: a.log\nb.log\nc.log\nd.log"'],
-                ['actname', 'log'],
-                ['logpath', 'a.log\nb.log\nc.log\nd.log'], ['name', 'multi-log']
-            ]]],
-            [['set', 'multi-log', 'addaction', 'test'], ['multi-set', 'multi-log', 'action', 'test', [
-                ['actionban', 'echo "name: test, ban: <ip>, logs: a.log\nb.log\nc.log"'],
-                ['actname', 'test'],
-                ['name', 'multi-log']
-            ]]]
-        ])
+        self.assertEqual(
+            jail.options['action'],
+            'action[actname=\'ban\']\naction[actname=\'log\', '
+            'logpath="a.log\nb.log\nc.log\nd.log"]\naction[actname=\'test\']')
+        self.assertSortedEqual(
+            [a.convert() for a in jail._JailReader__actions],
+            [
+                [
+                    ['set', 'multi-log', 'addaction', 'ban'],
+                    [
+                        'multi-set', 'multi-log', 'action', 'ban',
+                        [
+                            [
+                                'actionban', 'echo "name: ban, ban: <ip>, logs: a.log\nb.log\nc.log"'
+                            ],
+                            ['actname', 'ban'],
+                            ['name', 'multi-log']
+                        ]
+                    ]
+                ],
+                [
+                    ['set', 'multi-log', 'addaction', 'log'],
+                    [
+                        'multi-set', 'multi-log', 'action', 'log',
+                        [
+                            [
+                                'actionban', 'echo "name: log, ban: <ip>, logs: a.log\nb.log\nc.log\nd.log"'
+                            ],
+                            ['actname', 'log'],
+                            ['logpath', 'a.log\nb.log\nc.log\nd.log'],
+                            ['name', 'multi-log']
+                        ]
+                    ]
+                ],
+                [
+                    ['set', 'multi-log', 'addaction', 'test'],
+                    [
+                        'multi-set', 'multi-log', 'action', 'test',
+                        [
+                            ['actionban', 'echo "name: test, ban: <ip>, logs: a.log\nb.log\nc.log"'],
+                            ['actname', 'test'],
+                            ['name', 'multi-log']
+                        ]
+                    ]
+                ]
+            ]
+        )
 
     def testVersionAgent(self):
         unittest.F2B.SkipIfCfgMissing(stock=True)
@@ -479,16 +516,23 @@ class JailReaderTest(LogCaptureTestCase):
         # emulate jail.read(), because such jail not exists:
         ConfigReader.read(jail, "jail");
         sections = jail._cfg.get_sections()
-        sections['blocklisttest'] = dict((('__name__', 'blocklisttest'),
-            ('filter', ''), ('failregex', '^test <HOST>$'),
-            ('sender', 'f2b-test@example.com'), ('blocklist_de_apikey', 'test-key'),
-            ('action',
-                '%(action_blocklist_de)s\n'
-                '%(action_badips_report)s\n'
-                '%(action_badips)s\n'
-                'mynetwatchman[port=1234,protocol=udp,agent="%(fail2ban_agent)s"]'
-            ),
-        ))
+        sections['blocklisttest'] = dict(
+            (
+                ('__name__', 'blocklisttest'),
+                ('filter', ''),
+                ('failregex', '^test <HOST>$'),
+                ('sender', 'f2b-test@example.com'),
+                ('blocklist_de_apikey', 'test-key'),
+                (
+                    'action',
+
+                    '%(action_blocklist_de)s\n'
+                    '%(action_badips_report)s\n'
+                    '%(action_badips)s\n'
+                    'mynetwatchman[port=1234,protocol=udp,agent="%(fail2ban_agent)s"]'
+                ),
+            )
+        )
         # get options:
         self.assertTrue(jail.getOptions())
         # convert and get stream
@@ -505,10 +549,19 @@ class JailReaderTest(LogCaptureTestCase):
                 act.extend([['set'] + cmd[1:4] + o for o in cmd[4] if o[0] == 'agent'])
         useragent = 'Fail2Ban/%s' % version
         self.assertEqual(len(act), 4)
-        self.assertEqual(act[0], ['set', 'blocklisttest', 'action', 'blocklist_de', 'agent', useragent])
-        self.assertEqual(act[1], ['set', 'blocklisttest', 'action', 'badips', 'agent', useragent])
+        self.assertEqual(
+            act[0],
+            ['set', 'blocklisttest', 'action', 'blocklist_de', 'agent', useragent]
+        )
+        self.assertEqual(
+            act[1],
+            ['set', 'blocklisttest', 'action', 'badips', 'agent', useragent]
+        )
         self.assertEqual(eval(act[2][5]).get('agent', '<wrong>'), useragent)
-        self.assertEqual(act[3], ['set', 'blocklisttest', 'action', 'mynetwatchman', 'agent', useragent])
+        self.assertEqual(
+            act[3],
+            ['set', 'blocklisttest', 'action', 'mynetwatchman', 'agent', useragent]
+        )
 
     @with_tmpdir
     def testGlob(self, d):
@@ -585,8 +638,11 @@ class FilterReaderTest(LogCaptureTestCase):
         self.assertSortedEqual(filterReader.convert(), output)
 
     def testConvertOptions(self):
-        filterReader = FilterReader("testcase01", "testcase01", {'maxlines': '<test>', 'test': 'X'},
-          share_config=TEST_FILES_DIR_SHARE_CFG, basedir=TEST_FILES_DIR)
+        filterReader = FilterReader(
+            "testcase01", "testcase01",
+            {'maxlines': '<test>', 'test': 'X'},
+            share_config=TEST_FILES_DIR_SHARE_CFG,
+            basedir=TEST_FILES_DIR)
         filterReader.read()
         filterReader.getOptions(None)
         opts = filterReader.getCombined();
@@ -594,7 +650,11 @@ class FilterReaderTest(LogCaptureTestCase):
         self.assertLogged("Wrong int value 'X' for 'maxlines'. Using default one:")
 
     def testFilterReaderSubstitionDefault(self):
-        output = [['set', 'jailname', 'addfailregex', 'to=sweet@example.com fromip=<IP>']]
+        output = [
+            [
+                'set', 'jailname', 'addfailregex', 'to=sweet@example.com fromip=<IP>'
+            ]
+        ]
         filterReader = FilterReader('substition', "jailname", {},
           share_config=TEST_FILES_DIR_SHARE_CFG, basedir=TEST_FILES_DIR)
         filterReader.read()
@@ -603,11 +663,15 @@ class FilterReaderTest(LogCaptureTestCase):
         self.assertSortedEqual(c, output)
 
     def testFilterReaderSubstKnown(self):
-        # testcase02.conf + testcase02.local, test covering that known/option is not overridden
-        # with unmodified (not available) value of option from .local config file, so wouldn't
-        # cause self-recursion if option already has a reference to known/option in .conf file.
-        filterReader = FilterReader('testcase02', "jailname", {},
-          share_config=TEST_FILES_DIR_SHARE_CFG, basedir=TEST_FILES_DIR)
+        # testcase02.conf + testcase02.local, test covering that known/option
+        # is not overridden with unmodified (not available) value of option
+        # from .local config file, so wouldn't cause self-recursion if
+        # option already has a reference to known/option in .conf file.
+        filterReader = FilterReader(
+            'testcase02', "jailname",
+            {},
+            share_config=TEST_FILES_DIR_SHARE_CFG,
+            basedir=TEST_FILES_DIR)
         filterReader.read()
         filterReader.getOptions(None)
         opts = filterReader.getCombined()
@@ -615,8 +679,10 @@ class FilterReaderTest(LogCaptureTestCase):
 
     def testFilterReaderSubstitionSet(self):
         output = [['set', 'jailname', 'addfailregex', 'to=sour@example.com fromip=<IP>']]
-        filterReader = FilterReader('substition', "jailname", {'honeypot': 'sour@example.com'},
-          share_config=TEST_FILES_DIR_SHARE_CFG, basedir=TEST_FILES_DIR)
+        filterReader = FilterReader(
+            'substition', "jailname",
+            {'honeypot': 'sour@example.com'},
+            share_config=TEST_FILES_DIR_SHARE_CFG, basedir=TEST_FILES_DIR)
         filterReader.read()
         filterReader.getOptions(None)
         c = filterReader.convert()
