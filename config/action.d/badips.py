@@ -18,22 +18,21 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import sys
-if sys.version_info < (2, 7): # pragma: no cover
+if sys.version_info < (2, 7):  # pragma: no cover
 	raise ImportError("badips.py action requires Python >= 2.7")
 import json
 import threading
 import logging
-if sys.version_info >= (3, ): # pragma: 2.x no cover
+if sys.version_info >= (3, ):  # pragma: 2.x no cover
 	from urllib.request import Request, urlopen
 	from urllib.parse import urlencode
 	from urllib.error import HTTPError
-else: # pragma: 3.x no cover
+else:  # pragma: 3.x no cover
 	from urllib2 import Request, urlopen, HTTPError
 	from urllib import urlencode
 
 from fail2ban.server.actions import Actions, ActionBase, BanTicket
 from fail2ban.helpers import splitwords, str2LogLevel
-
 
 
 class BadIPsAction(ActionBase): # pragma: no cover - may be unavailable
@@ -91,7 +90,7 @@ class BadIPsAction(ActionBase): # pragma: no cover - may be unavailable
 		return Request(url, headers={'User-Agent': self.agent}, **argv)
 
 	def __init__(self, jail, name, category, score=3, age="24h",
-		banaction=None, bancategory=None, bankey=None, updateperiod=900, 
+				i banaction=None, bancategory=None, bankey=None, updateperiod=900,
 		loglevel='DEBUG', agent="Fail2Ban", timeout=TIMEOUT):
 		super(BadIPsAction, self).__init__(jail, name)
 

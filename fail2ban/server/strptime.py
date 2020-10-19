@@ -34,16 +34,18 @@ locale_time = LocaleTime()
 TZ_ABBR_RE = r"[A-Z](?:[A-Z]{2,4})?"
 FIXED_OFFSET_TZ_RE = re.compile(r"(%s)?([+-][01]\d(?::?\d{2})?)?$" % (TZ_ABBR_RE,))
 
-def _getYearCentRE(cent=(0,3), distance=3, now=(MyTime.now(), MyTime.alternateNow)):
+
+def _getYearCentRE(cent=(0, 3), distance=3, now=(MyTime.now(), MyTime.alternateNow)):
     """ Build century regex for last year and the next years (distance).
 
     Thereby respect possible run in the test-cases (alternate date used there)
     """
     cent = lambda year, f=cent[0], t=cent[1]: str(year)[f:t]
-    exprset = set( cent(now[0].year + i) for i in (-1, distance) )
+    exprset = set(cent(now[0].year + i) for i in (-1, distance))
     if len(now) and now[1]:
-        exprset |= set( cent(now[1].year + i) for i in (-1, distance) )
+        exprset |= set(cent(now[1].year + i) for i in (-1, distance))
     return "(?:%s)" % "|".join(exprset) if len(exprset) > 1 else "".join(exprset)
+
 
 timeRE = TimeRE()
 
@@ -79,8 +81,9 @@ timeRE['ExS'] = r"(?P<S>6[0-1]|[0-5]\d)"
 # more precise year patterns, within same century of last year and
 # the next 3 years (for possible long uptime of fail2ban); thereby
 # respect possible run in the test-cases (alternate date used there):
-timeRE['ExY'] = r"(?P<Y>%s\d)" % _getYearCentRE(cent=(0,3), distance=3)
-timeRE['Exy'] = r"(?P<y>%s\d)" % _getYearCentRE(cent=(2,3), distance=3)
+timeRE['ExY'] = r"(?P<Y>%s\d)" % _getYearCentRE(cent=(0, 3), distance=3)
+timeRE['Exy'] = r"(?P<y>%s\d)" % _getYearCentRE(cent=(2, 3), distance=3)
+
 
 def getTimePatternRE():
     keys = list(timeRE.keys())
@@ -95,7 +98,7 @@ def getTimePatternRE():
         'w': "Weekday", 'W': "Yearweek", 'y': 'Year2', 'Y': "Year", '%': "%",
         'z': "Zone offset", 'f': "Microseconds", 'Z': "Zone name",
     }
-    for key in set(keys) - set(names): # may not have them all...
+    for key in set(keys) - set(names):  # may not have them all...
         if key.startswith('Ex'):
             kn = names.get(key[2:])
             if kn:
@@ -124,6 +127,7 @@ def validateTimeZone(tz):
     tz = m.groups()
     return zone2offset(tz, 0)
 
+
 def zone2offset(tz, dt):
     """Return the proper offset, in minutes according to given timezone at a given time.
 
@@ -141,9 +145,9 @@ def zone2offset(tz, dt):
     if isinstance(tz, basestring):
         return validateTimeZone(tz)
     tz, tzo = tz
-    if tzo is None or tzo == '': # without offset
+    if tzo is None or tzo == '':  # without offset
         return TZ_ABBR_OFFS[tz]
-    if len(tzo) <= 3: # short tzo (hh only)
+    if len(tzo) <= 3:  # short tzo (hh only)
         # [+-]hh --> [+-]hh*60
         return TZ_ABBR_OFFS[tz] + int(tzo)*60
     if tzo[3] != ':':
@@ -172,11 +176,12 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
     """
 
     now = \
-    year = month = day = hour = minute = tzoffset = \
-    weekday = julian = week_of_year = None
+        year = month = day = hour = minute = tzoffset = \
+        weekday = julian = week_of_year = None
     second = fraction = 0
     for key, val in list(found_dict.items()):
-        if val is None: continue
+        if val is None:
+            continue
         # Directives not explicitly handled below:
         #   c, x, X
         #     handled by making out of other directives
@@ -220,7 +225,7 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
         elif key == 'S':
             second = int(val)
         elif key == 'f':
-            if msec: # pragma: no cover - currently unused
+            if msec:  # pragma: no cover - currently unused
                 s = val
                 # Pad to always return microseconds.
                 s += "0" * (6 - len(s))
@@ -231,7 +236,8 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
             weekday = locale_time.a_weekday.index(val.lower())
         elif key == 'w':
             weekday = int(val) - 1
-            if weekday < 0: weekday = 6
+            if weekday < 0:
+                weekday = 6
         elif key == 'j':
             julian = int(val)
         elif key in ('U', 'W'):
@@ -243,7 +249,7 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
             if z in ("Z", "UTC", "GMT"):
                 tzoffset = 0
             else:
-                tzoffset = zone2offset(z, 0); # currently offset-based only
+                tzoffset = zone2offset(z, 0)  # currently offset-based only
         elif key == 'Z':
             z = val
             if z in ("UTC", "GMT"):
@@ -252,15 +258,17 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
     # Fail2Ban will assume it's this year
     assume_year = False
     if year is None:
-        if not now: now = MyTime.now()
+        if not now:
+            now = MyTime.now()
         year = now.year
         assume_year = True
     if month is None or day is None:
         # If we know the week of the year and what day of that week, we can figure
         # out the Julian day of the year.
         if julian is None and week_of_year is not None and weekday is not None:
-            julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
-                                                (week_of_year_start == 0))
+            julian = _calc_julian_from_U_or_W(
+                year, week_of_year, weekday,
+                (week_of_year_start == 0))
         # Cannot pre-calculate datetime.datetime() since can change in Julian
         # calculation and thus could have different value for the day of the week
         # calculation.
@@ -273,13 +281,14 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
     # Fail2Ban assume today
     assume_today = False
     if month is None and day is None:
-        if not now: now = MyTime.now()
+        if not now:
+            now = MyTime.now()
         month = now.month
         day = now.day
         assume_today = True
 
     # Actully create date
-    date_result =  datetime.datetime(
+    date_result = datetime.datetime(
         year, month, day, hour, minute, second, fraction)
     # Correct timezone if not supplied in the log linge
     if tzoffset is None and default_tz is not None:
@@ -289,13 +298,15 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
         date_result -= datetime.timedelta(seconds=tzoffset * 60)
 
     if assume_today:
-        if not now: now = MyTime.now()
+        if not now:
+            now = MyTime.now()
         if date_result > now:
             # Rollover at midnight, could mean it's yesterday...
             date_result -= datetime.timedelta(days=1)
     if assume_year:
-        if not now: now = MyTime.now()
-        if date_result > now + datetime.timedelta(days=1): # ignore by timezone issues (+24h)
+        if not now:
+            now = MyTime.now()
+        if date_result > now + datetime.timedelta(days=1):  # ignore by timezone issues (+24h)
             # assume last year - also reset month and day as it's not yesterday...
             date_result = date_result.replace(
                 year=year-1, month=month, day=day)
@@ -305,12 +316,12 @@ def reGroupDictStrptime(found_dict, msec=False, default_tz=None):
         tm = calendar.timegm(date_result.utctimetuple())
     else:
         tm = time.mktime(date_result.timetuple())
-    if msec: # pragma: no cover - currently unused
+    if msec:  # pragma: no cover - currently unused
         tm += fraction/1000000.0
     return tm
 
 
-TZ_ABBR_OFFS = {'':0, None:0}
+TZ_ABBR_OFFS = {'': 0, None: 0}
 TZ_STR = '''
     -12 Y
     -11 X NUT SST
@@ -352,12 +363,15 @@ TZ_STR = '''
     -9.5 MART MIT
 '''
 
+
 def _init_TZ_ABBR():
     """Initialized TZ_ABBR_OFFS dictionary (TZ -> offset in minutes)"""
     for tzline in map(str.split, TZ_STR.split('\n')):
-        if not len(tzline): continue
+        if not len(tzline):
+            continue
         tzoffset = int(float(tzline[0]) * 60)
         for tz in tzline[1:]:
             TZ_ABBR_OFFS[tz] = tzoffset
+
 
 _init_TZ_ABBR()

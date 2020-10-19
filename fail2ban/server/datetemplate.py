@@ -37,7 +37,7 @@ logSys = getLogger(__name__)
 
 # check already grouped contains "(", but ignores char "\(" and conditional "(?(id)...)":
 RE_GROUPED = re.compile(r'(?<!(?:\(\?))(?<!\\)\((?!\?)')
-RE_GROUP = ( re.compile(r'^((?:\(\?\w+\))?\^?(?:\(\?\w+\))?)(.*?)(\$?)$'), r"\1(\2)\3" )
+RE_GROUP = (re.compile(r'^((?:\(\?\w+\))?\^?(?:\(\?\w+\))?)(.*?)(\$?)$'), r"\1(\2)\3")
 
 RE_EXLINE_NO_BOUNDS = re.compile(r'^\{UNB\}')
 RE_EXLINE_BOUND_BEG = re.compile(r'^\{\^LN-BEG\}')
@@ -45,8 +45,8 @@ RE_EXSANC_BOUND_BEG = re.compile(r'^\((?:\?:)?\^\|\\b\|\\W\)')
 RE_EXEANC_BOUND_BEG = re.compile(r'\(\?=\\b\|\\W\|\$\)$')
 RE_NO_WRD_BOUND_BEG = re.compile(r'^\(*(?:\(\?\w+\))?(?:\^|\(*\*\*|\((?:\?:)?\^)')
 RE_NO_WRD_BOUND_END = re.compile(r'(?<!\\)(?:\$\)?|\\b|\\s|\*\*\)*)$')
-RE_DEL_WRD_BOUNDS = ( re.compile(r'^\(*(?:\(\?\w+\))?\(*\*\*|(?<!\\)\*\*\)*$'),
-                        lambda m: m.group().replace('**', '') )
+RE_DEL_WRD_BOUNDS = (re.compile(r'^\(*(?:\(\?\w+\))?\(*\*\*|(?<!\\)\*\*\)*$'),
+                     lambda m: m.group().replace('**', ''))
 
 RE_LINE_BOUND_BEG = re.compile(r'^(?:\(\?\w+\))?(?:\^|\((?:\?:)?\^(?!\|))')
 RE_LINE_BOUND_END = re.compile(r'(?<![\\\|])(?:\$\)?)$')
@@ -69,9 +69,9 @@ class DateTemplate(object):
     """
 
     LINE_BEGIN = 8
-    LINE_END =   4
+    LINE_END = 4
     WORD_BEGIN = 2
-    WORD_END =   1
+    WORD_END = 1
 
     def __init__(self):
         self.name = ""
@@ -162,10 +162,11 @@ class DateTemplate(object):
         """
         if not self._cRegex:
             self._compileRegex()
-        dateMatch = self._cRegex.search(line, *args); # pos, endpos
+        dateMatch = self._cRegex.search(line, *args)  # pos, endpos
         if dateMatch:
             self.hits += 1
-        # print('*'*10 + ('[%s] - %-30.30s -- %s' % ('*' if dateMatch else ' ', getattr(self, 'pattern', self.regex), self.name)))
+        # print('*'*10 + ('[%s] - %-30.30s -- %s' % ('*' if dateMatch
+        # else ' ', getattr(self, 'pattern', self.regex), self.name)))
         return dateMatch
 
     @abstractmethod
@@ -192,8 +193,10 @@ class DateTemplate(object):
 
     @staticmethod
     def unboundPattern(pattern):
-        return RE_EXEANC_BOUND_BEG.sub('',
-            RE_EXSANC_BOUND_BEG.sub('',
+        return RE_EXEANC_BOUND_BEG.sub(
+            '',
+            RE_EXSANC_BOUND_BEG.sub(
+                '',
                 RE_EXLINE_BOUND_BEG.sub('', RE_EXLINE_NO_BOUNDS.sub('', pattern))
             )
         )
@@ -214,7 +217,7 @@ class DateEpoch(DateTemplate):
     def __init__(self, lineBeginOnly=False, pattern=None, longFrm=False):
         DateTemplate.__init__(self)
         self.name = "Epoch" if not pattern else pattern
-        self._longFrm = longFrm;
+        self._longFrm = longFrm
         self._grpIdx = 1
         epochRE = r"\d{10,11}\b(?:\.\d{3,6})?"
         if longFrm:
@@ -226,8 +229,10 @@ class DateEpoch(DateTemplate):
             self._grpIdx = 2
             self.setRegex(regex)
         elif not lineBeginOnly:
-            regex = r"((?:^|(?P<square>(?<=^\[))|(?P<selinux>(?<=\baudit\()))%s)(?:(?(selinux)(?=:\d+\)))|(?(square)(?=\])))" % epochRE
-            self.setRegex(regex, wordBegin=False) ;# already line begin resp. word begin anchored
+            regex = r"((?:^|(?P<square>(?<=^\[))|" \
+                    r"(?P<selinux>(?<=\baudit\()))%s)" \
+                    r"(?:(?(selinux)(?=:\d+\)))|(?(square)(?=\])))" % epochRE
+            self.setRegex(regex, wordBegin=False)  # already line begin resp. word begin anchored
         else:
             regex = r"((?P<square>(?<=^\[))?%s)(?(square)(?=\]))" % epochRE
             self.setRegex(regex, wordBegin='start', wordEnd=True)
@@ -257,7 +262,7 @@ class DateEpoch(DateTemplate):
                     v = float(v) / 1000000
                 else:
                     v = float(v) / 1000
-            return (float(v), dateMatch)
+            return float(v), dateMatch
 
 
 class DatePatternRegex(DateTemplate):
@@ -321,7 +326,9 @@ class DatePatternRegex(DateTemplate):
                 regex = r'(?iu)' + regex
             super(DatePatternRegex, self).setRegex(regex, wordBegin, wordEnd)
         except Exception as e:
-            raise TypeError("Failed to set datepattern '%s' (may be an invalid format or unescaped percent char): %s" % (pattern, e))
+            raise TypeError("Failed to set datepattern '%s' "
+                            "(may be an invalid format or unescaped percent char): %s" %
+                            (pattern, e))
 
     def getDate(self, line, dateMatch=None, default_tz=None):
         """Method to return the date for a log line.
@@ -345,7 +352,7 @@ class DatePatternRegex(DateTemplate):
             dateMatch = self.matchDate(line)
         if dateMatch:
             return (reGroupDictStrptime(dateMatch.groupdict(), default_tz=default_tz),
-                dateMatch)
+                    dateMatch)
 
 
 class DateTai64n(DateTemplate):

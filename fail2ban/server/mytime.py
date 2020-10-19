@@ -29,10 +29,10 @@ import datetime
 import re
 import time
 
+
 ##
 # MyTime class.
 #
-
 class MyTime(object):
     """A wrapper around time module primarily for testing purposes
 
@@ -127,26 +127,26 @@ class MyTime(object):
         # consider end of 9999th year (in GMT+23 to avoid year overflow in other TZ)
         dt = datetime.datetime.fromtimestamp(
             unixTime).replace(microsecond=0
-        ) if unixTime < 253402214400 else datetime.datetime(9999, 12, 31, 23, 59, 59)
+            ) if unixTime < 253402214400 else datetime.datetime(9999, 12, 31, 23, 59, 59)
         return dt.strftime(format)
 
-    ## precreate/precompile primitives used in str2seconds:
+    # precreate/precompile primitives used in str2seconds:
 
-    ## preparing expression:
+    # preparing expression:
     _str2sec_prep = re.compile(r"(?i)(?<=[a-z])(\d)")
-    ## finally expression:
+    # finally expression:
     _str2sec_fini = re.compile(r"(\d)\s+(\d)")
-    ## wrapper for each sub part:
+    # wrapper for each sub part:
     _str2sec_subpart = r"(?i)(?<=[\d\s])(%s)\b"
-    ## parts to be replaced - pair of (regexp x replacement):
+    # parts to be replaced - pair of (regexp x replacement):
     _str2sec_parts = (
-        (re.compile(_str2sec_subpart % r"days?|da|dd?"),      "*"+str(24*60*60)),
-        (re.compile(_str2sec_subpart % r"weeks?|wee?|ww?"),   "*"+str(7*24*60*60)),
-        (re.compile(_str2sec_subpart % r"months?|mon?"),      "*"+str(old_div(old_div((365*3+366)*24*60*60,4),12))),
-        (re.compile(_str2sec_subpart % r"years?|yea?|yy?"),   "*"+str(old_div((365*3+366)*24*60*60,4))),
+        (re.compile(_str2sec_subpart % r"days?|da|dd?"), "*"+str(24*60*60)),
+        (re.compile(_str2sec_subpart % r"weeks?|wee?|ww?"), "*"+str(7*24*60*60)),
+        (re.compile(_str2sec_subpart % r"months?|mon?"), "*"+str(old_div(old_div((365*3+366)*24*60*60,4),12))),
+        (re.compile(_str2sec_subpart % r"years?|yea?|yy?"), "*"+str(old_div((365*3+366)*24*60*60,4))),
         (re.compile(_str2sec_subpart % r"seconds?|sec?|ss?"), "*"+str(1)),
         (re.compile(_str2sec_subpart % r"minutes?|min?|mm?"), "*"+str(60)),
-        (re.compile(_str2sec_subpart % r"hours?|hou?|hh?"),   "*"+str(60*60)),
+        (re.compile(_str2sec_subpart % r"hours?|hou?|hh?"), "*"+str(60*60)),
     )
 
     @staticmethod

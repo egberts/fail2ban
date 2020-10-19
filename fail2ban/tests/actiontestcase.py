@@ -49,6 +49,7 @@ class CommandActionTest(LogCaptureTestCase):
         # prevent execute stop if start fails (or event not started at all):
         self.__action_started = False
         orgstart = self.__action.start
+
         def _action_start():
             self.__action_started = True
             return orgstart()
@@ -67,32 +68,55 @@ class CommandActionTest(LogCaptureTestCase):
             'xyz': "890 <ABC>",
         }
         # Recursion is bad
-        self.assertRaises(ValueError,
+        self.assertRaises(
+            ValueError,
             lambda: substituteRecursiveTags({'A': '<A>'}))
-        self.assertRaises(ValueError,
+        self.assertRaises(
+            ValueError,
             lambda: substituteRecursiveTags({'A': '<B>', 'B': '<A>'}))
-        self.assertRaises(ValueError,
+        self.assertRaises(
+            ValueError,
             lambda: substituteRecursiveTags({'A': '<B>', 'B': '<C>', 'C': '<A>'}))
         # Unresolveable substition
-        self.assertRaises(ValueError,
+        self.assertRaises(
+            ValueError,
             lambda: substituteRecursiveTags({'A': 'to=<B> fromip=<IP>', 'C': '<B>', 'B': '<C>', 'D': ''}))
-        self.assertRaises(ValueError,
-            lambda: substituteRecursiveTags({'failregex': 'to=<honeypot> fromip=<IP>', 'sweet': '<honeypot>', 'honeypot': '<sweet>', 'ignoreregex': ''}))
+        self.assertRaises(
+            ValueError,
+            lambda: substituteRecursiveTags(
+                {'failregex': 'to=<honeypot> fromip=<IP>',
+                 'sweet': '<honeypot>',
+                 'honeypot': '<sweet>',
+                 'ignoreregex': ''}))
         # We need here an ordered, because the sequence of iteration is very important for this test
         if OrderedDict:
             # No cyclic recursion, just multiple replacement of tag <T>, should be successful:
-            self.assertEqual(substituteRecursiveTags( OrderedDict(
+            self.assertEqual(substituteRecursiveTags(
+                OrderedDict(
                     (('X', 'x=x<T>'), ('T', '1'), ('Z', '<X> <T> <Y>'), ('Y', 'y=y<T>')))
-                ), {'X': 'x=x1', 'T': '1', 'Y': 'y=y1', 'Z': 'x=x1 1 y=y1'}
+                ),
+                {'X': 'x=x1', 'T': '1', 'Y': 'y=y1', 'Z': 'x=x1 1 y=y1'}
             )
             # No cyclic recursion, just multiple replacement of tag <T> in composite tags, should be successful:
-            self.assertEqual(substituteRecursiveTags( OrderedDict(
-                  (('X', 'x=x<T> <Z> <<R1>> <<R2>>'), ('R1', 'Z'), ('R2', 'Y'), ('T', '1'), ('Z', '<T> <Y>'), ('Y', 'y=y<T>')))
-                ), {'X': 'x=x1 1 y=y1 1 y=y1 y=y1', 'R1': 'Z', 'R2': 'Y', 'T': '1', 'Z': '1 y=y1', 'Y': 'y=y1'}
+            self.assertEqual(substituteRecursiveTags(
+                OrderedDict(
+                  (
+                      ('X', 'x=x<T> <Z> <<R1>> <<R2>>'),
+                      ('R1', 'Z'),
+                      ('R2', 'Y'),
+                      ('T', '1'),
+                      ('Z', '<T> <Y>'),
+                      ('Y', 'y=y<T>')
+                  )
+                )
+                ),
+                {'X': 'x=x1 1 y=y1 1 y=y1 y=y1', 'R1': 'Z', 'R2': 'Y', 'T': '1', 'Z': '1 y=y1', 'Y': 'y=y1'}
             )
             # No cyclic recursion, just multiple replacement of same tags, should be successful:
-            self.assertEqual(substituteRecursiveTags( OrderedDict((
-                    ('actionstart', 'ipset create <ipmset> hash:ip timeout <bantime> family <ipsetfamily>\n<iptables> -I <chain> <actiontype>'),
+            self.assertEqual(substituteRecursiveTags(OrderedDict((
+                    ('actionstart',
+                     'ipset create <ipmset> hash:ip timeout <bantime> family '
+                     '<ipsetfamily>\n<iptables> -I <chain> <actiontype>'),
                     ('ipmset', 'f2b-<name>'),
                     ('name', 'any'),
                     ('bantime', '600'),
@@ -101,13 +125,16 @@ class CommandActionTest(LogCaptureTestCase):
                     ('lockingopt', '-w'),
                     ('chain', 'INPUT'),
                     ('actiontype', '<multiport>'),
-                    ('multiport', '-p <protocol> -m multiport --dports <port> -m set --match-set <ipmset> src -j <blocktype>'),
+                    ('multiport', '-p <protocol> -m multiport --dports <port> -m set '
+                     '--match-set <ipmset> src -j <blocktype>'),
                     ('protocol', 'tcp'),
                     ('port', 'ssh'),
                     ('blocktype', 'REJECT',),
                 ))
                 ), OrderedDict((
-                    ('actionstart', 'ipset create f2b-any hash:ip timeout 600 family inet\niptables -w -I INPUT -p tcp -m multiport --dports ssh -m set --match-set f2b-any src -j REJECT'),
+                    ('actionstart', 'ipset create f2b-any hash:ip timeout 600 '
+                     'family inet\niptables -w -I INPUT -p tcp -m multiport --dports '
+                     'ssh -m set --match-set f2b-any src -j REJECT'),
                     ('ipmset', 'f2b-any'),
                     ('name', 'any'),
                     ('bantime', '600'),
@@ -123,56 +150,86 @@ class CommandActionTest(LogCaptureTestCase):
                 ))
             )
             # Cyclic recursion by composite tag creation, tags "create" another tag, that closes cycle:
-            self.assertRaises(ValueError, lambda: substituteRecursiveTags( OrderedDict((
-                    ('A', '<<B><C>>'),
-                    ('B', 'D'), ('C', 'E'),
-                    ('DE', 'cycle <A>'),
-            )) ))
-            self.assertRaises(ValueError, lambda: substituteRecursiveTags( OrderedDict((
-                    ('DE', 'cycle <A>'),
-                    ('A', '<<B><C>>'),
-                    ('B', 'D'), ('C', 'E'),
-            )) ))
+            self.assertRaises(
+                ValueError,
+                lambda: substituteRecursiveTags(
+                    OrderedDict(
+                        (
+                            ('A', '<<B><C>>'),
+                            ('B', 'D'), ('C', 'E'),
+                            ('DE', 'cycle <A>'),
+                        )
+                    )
+                )
+            )
+            self.assertRaises(
+                ValueError,
+                lambda: substituteRecursiveTags(
+                    OrderedDict(
+                        (
+                            ('DE', 'cycle <A>'),
+                            ('A', '<<B><C>>'),
+                            ('B', 'D'),
+                            ('C', 'E'),
+                        )
+                    )
+                )
+            )
 
         # missing tags are ok
         self.assertEqual(substituteRecursiveTags({'A': '<C>'}), {'A': '<C>'})
-        self.assertEqual(substituteRecursiveTags({'A': '<C> <D> <X>','X':'fun'}), {'A': '<C> <D> fun', 'X':'fun'})
-        self.assertEqual(substituteRecursiveTags({'A': '<C> <B>', 'B': 'cool'}), {'A': '<C> cool', 'B': 'cool'})
+        self.assertEqual(
+            substituteRecursiveTags({'A': '<C> <D> <X>', 'X': 'fun'}),
+            {'A': '<C> <D> fun', 'X': 'fun'})
+        self.assertEqual(
+            substituteRecursiveTags({'A': '<C> <B>', 'B': 'cool'}),
+            {'A': '<C> cool', 'B': 'cool'})
         # Escaped tags should be ignored
-        self.assertEqual(substituteRecursiveTags({'A': '<matches> <B>', 'B': 'cool'}), {'A': '<matches> cool', 'B': 'cool'})
+        self.assertEqual(
+            substituteRecursiveTags({'A': '<matches> <B>', 'B': 'cool'}),
+            {'A': '<matches> cool', 'B': 'cool'})
         # Multiple stuff on same line is ok
-        self.assertEqual(substituteRecursiveTags({'failregex': 'to=<honeypot> fromip=<IP> evilperson=<honeypot>', 'honeypot': 'pokie', 'ignoreregex': ''}),
-                                { 'failregex': "to=pokie fromip=<IP> evilperson=pokie",
-                                    'honeypot': 'pokie',
-                                    'ignoreregex': '',
-                                })
+        self.assertEqual(
+            substituteRecursiveTags({'failregex': 'to=<honeypot> fromip=<IP> evilperson=<honeypot>',
+                                     'honeypot': 'pokie', 'ignoreregex': ''}),
+            {
+                'failregex': "to=pokie fromip=<IP> evilperson=pokie",
+                'honeypot': 'pokie',
+                'ignoreregex': '',
+            }
+        )
         # rest is just cool
-        self.assertEqual(substituteRecursiveTags(aInfo),
-                                { 'HOST': "192.0.2.0",
-                                    'ABC': '123 192.0.2.0',
-                                    'xyz': '890 123 192.0.2.0',
-                                })
+        self.assertEqual(
+            substituteRecursiveTags(aInfo),
+            {
+                'HOST': "192.0.2.0",
+                'ABC': '123 192.0.2.0',
+                'xyz': '890 123 192.0.2.0',
+            })
         # obscure embedded case
-        self.assertEqual(substituteRecursiveTags({'A': '<<PREF>HOST>', 'PREF': 'IPV4'}),
-                         {'A': '<IPV4HOST>', 'PREF': 'IPV4'})
-        self.assertEqual(substituteRecursiveTags({'A': '<<PREF>HOST>', 'PREF': 'IPV4', 'IPV4HOST': '1.2.3.4'}),
-                         {'A': '1.2.3.4', 'PREF': 'IPV4', 'IPV4HOST': '1.2.3.4'})
+        self.assertEqual(
+            substituteRecursiveTags({'A': '<<PREF>HOST>', 'PREF': 'IPV4'}),
+            {'A': '<IPV4HOST>', 'PREF': 'IPV4'})
+        self.assertEqual(
+            substituteRecursiveTags({'A': '<<PREF>HOST>', 'PREF': 'IPV4', 'IPV4HOST': '1.2.3.4'}),
+            {'A': '1.2.3.4', 'PREF': 'IPV4', 'IPV4HOST': '1.2.3.4'})
         # more embedded within a string and two interpolations
-        self.assertEqual(substituteRecursiveTags({'A': 'A <IP<PREF>HOST> B IP<PREF> C', 'PREF': 'V4', 'IPV4HOST': '1.2.3.4'}),
-                         {'A': 'A 1.2.3.4 B IPV4 C', 'PREF': 'V4', 'IPV4HOST': '1.2.3.4'})
+        self.assertEqual(
+            substituteRecursiveTags({'A': 'A <IP<PREF>HOST> B IP<PREF> C', 'PREF': 'V4', 'IPV4HOST': '1.2.3.4'}),
+            {'A': 'A 1.2.3.4 B IPV4 C', 'PREF': 'V4', 'IPV4HOST': '1.2.3.4'})
 
     def testSubstRec_DontTouchUnusedCallable(self):
         cm = CallingMap({
-            'A':0,
-            'B':lambda self: '<A><A>',
-            'C':'',
-            'D':''
+            'A': 0,
+            'B': lambda self: '<A><A>',
+            'C': '',
+            'D': ''
         })
         #
         # should raise no exceptions:
         substituteRecursiveTags(cm)
         # add exception tag:
-        cm['C'] = lambda self,i=0: 5 // int(self['A']) # raise error by access
+        cm['C'] = lambda self, i=0: 5 // int(self['A'])  # raise error by access
         # test direct get of callable (should raise an error):
         self.assertRaises(ZeroDivisionError, lambda: cm['C'])
         # should raise no exceptions (tag "C" still unused):
@@ -208,15 +265,20 @@ class CommandActionTest(LogCaptureTestCase):
             self.__action.replaceTag("Text <xyz> text <ABC> ABC", aInfo),
             "Text 890 text 123 ABC")
         self.assertEqual(
-            self.__action.replaceTag("<matches>",
-                {'matches': "some >char< should \\< be[ escap}ed&\n"}),
+            self.__action.replaceTag(
+                "<matches>",
+                {'matches': "some >char< should \\< be[ escap}ed&\n"}
+            ),
             "some \\>char\\< should \\\\\\< be\\[ escap\\}ed\\&\\n")
         self.assertEqual(
-            self.__action.replaceTag("<ipmatches>",
-                {'ipmatches': "some >char< should \\< be[ escap}ed&\n"}),
+            self.__action.replaceTag(
+                "<ipmatches>",
+                {'ipmatches': "some >char< should \\< be[ escap}ed&\n"}
+            ),
             "some \\>char\\< should \\\\\\< be\\[ escap\\}ed\\&\\n")
         self.assertEqual(
-            self.__action.replaceTag("<ipjailmatches>",
+            self.__action.replaceTag(
+                "<ipjailmatches>",
                 {'ipjailmatches': "some >char< should \\< be[ escap}ed&\r\n"}),
             "some \\>char\\< should \\\\\\< be\\[ escap\\}ed\\&\\r\\n")
 
@@ -228,7 +290,8 @@ class CommandActionTest(LogCaptureTestCase):
 
         # Callable
         self.assertEqual(
-            self.__action.replaceTag("09 <matches> 11",
+            self.__action.replaceTag(
+                "09 <matches> 11",
                 CallingMap(matches=lambda self: str(10))),
             "09 10 11")
 
@@ -236,8 +299,10 @@ class CommandActionTest(LogCaptureTestCase):
         # As tag not present, therefore callable should not be called
         # Will raise ValueError if it is
         self.assertEqual(
-            self.__action.replaceTag("abc",
-                CallingMap(matches=lambda self: int("a"))), "abc")
+            self.__action.replaceTag(
+                "abc",
+                CallingMap(matches=lambda self: int("a"))),
+            "abc")
 
     def testReplaceTagSelfRecursion(self):
         setattr(self.__action, 'a', "<a")
@@ -247,16 +312,24 @@ class CommandActionTest(LogCaptureTestCase):
         setattr(self.__action, 'ab', "<ac>")
         setattr(self.__action, 'x?family=inet6', "")
         # produce self-referencing properties except:
-        self.assertRaisesRegexp(ValueError, r"properties contain self referencing definitions",
-            lambda: self.__action.replaceTag("<a><b>",
-                self.__action._properties, conditional="family=inet4")
+        self.assertRaisesRegexp(
+            ValueError,
+            r"properties contain self referencing definitions",
+            lambda: self.__action.replaceTag(
+                "<a><b>",
+                self.__action._properties,
+                conditional="family=inet4")
         )
         # remore self-referencing in props:
         delattr(self.__action, 'ac')
         # produce self-referencing query except:
-        self.assertRaisesRegexp(ValueError, r"possible self referencing definitions in query",
-            lambda: self.__action.replaceTag("<x"*30+">"*30,
-                self.__action._properties, conditional="family=inet6")
+        self.assertRaisesRegexp(
+            ValueError,
+            r"possible self referencing definitions in query",
+            lambda: self.__action.replaceTag(
+                "<x" * 30 + ">" * 30,
+                self.__action._properties,
+                conditional="family=inet6")
         )
 
     def testReplaceTagConditionalCached(self):
@@ -269,15 +342,21 @@ class CommandActionTest(LogCaptureTestCase):
         cache = self.__action._substCache
         for i in range(2):
             self.assertEqual(
-                self.__action.replaceTag("<banaction> '<abc>'", self.__action._properties,
+                self.__action.replaceTag(
+                    "<banaction> '<abc>'",
+                    self.__action._properties,
                     conditional="", cache=cache),
                 "Text 890-123 text 123 '123'")
             self.assertEqual(
-                self.__action.replaceTag("<banaction> '<abc>'", self.__action._properties,
+                self.__action.replaceTag(
+                    "<banaction> '<abc>'",
+                    self.__action._properties,
                     conditional="family=inet4", cache=cache),
                 "Text 890-345 text 345 '345'")
             self.assertEqual(
-                self.__action.replaceTag("<banaction> '<abc>'", self.__action._properties,
+                self.__action.replaceTag(
+                    "<banaction> '<abc>'",
+                    self.__action._properties,
                     conditional="family=inet6", cache=cache),
                 "Text 890-567 text 567 '567'")
         self.assertTrue(len(cache) >= 3)
@@ -287,16 +366,24 @@ class CommandActionTest(LogCaptureTestCase):
         # test againg, should have 000 instead of 890:
         for i in range(2):
             self.assertEqual(
-                self.__action.replaceTag("<banaction> '<abc>'", self.__action._properties,
+                self.__action.replaceTag(
+                    "<banaction> '<abc>'",
+                    self.__action._properties,
                     conditional="", cache=cache),
                 "Text 000-123 text 123 '123'")
             self.assertEqual(
-                self.__action.replaceTag("<banaction> '<abc>'", self.__action._properties,
-                    conditional="family=inet4", cache=cache),
+                self.__action.replaceTag(
+                    "<banaction> '<abc>'",
+                    self.__action._properties,
+                    conditional="family=inet4",
+                    cache=cache),
                 "Text 000-345 text 345 '345'")
             self.assertEqual(
-                self.__action.replaceTag("<banaction> '<abc>'", self.__action._properties,
-                    conditional="family=inet6", cache=cache),
+                self.__action.replaceTag(
+                    "<banaction> '<abc>'",
+                    self.__action._properties,
+                    conditional="family=inet6",
+                    cache=cache),
                 "Text 000-567 text 567 '567'")
         self.assertTrue(len(cache) >= 3)
 
@@ -332,13 +419,13 @@ class CommandActionTest(LogCaptureTestCase):
         self.__action.actionunban = ""
         self.__action.actionflush = "echo -n 'flush'"
         self.__action.actionstop = "echo -n 'stop'"
-        self.__action.start();
-        self.__action.ban({});
+        self.__action.start()
+        self.__action.ban({})
         self.pruneLog()
         self.__action.unban({})
         self.assertLogged('Nothing to do', wait=True)
         # same as above but with interim flush, so no unban anymore:
-        self.__action.ban({});
+        self.__action.ban({})
         self.pruneLog('[phase 2]')
         self.__action.flush()
         self.__action.unban({})
@@ -394,7 +481,8 @@ class CommandActionTest(LogCaptureTestCase):
             self.__action.ban({'ip': '192.0.2.1'})
             self.assertLogged(
                 "stdout: %r" % 'banned 192.0.2.1', all=True)
-            self.assertNotLogged("Invariant check failed. Trying",
+            self.assertNotLogged(
+                "Invariant check failed. Trying",
                 "stdout: %r" % 'check failed',
                 "stdout: %r" % ('repair ...' if self.__action.actionrepair else 'started ...'),
                 "stdout: %r" % 'check ok', all=True)
@@ -403,7 +491,8 @@ class CommandActionTest(LogCaptureTestCase):
             self.pruneLog()
             # 2nd time with fail recognition, success repair, check and ban:
             self.__action.ban({'ip': '192.0.2.2'})
-            self.assertLogged("Invariant check failed. Trying",
+            self.assertLogged(
+                "Invariant check failed. Trying",
                 "stdout: %r" % 'check failed',
                 "stdout: %r" % ('repair ...' if self.__action.actionrepair else 'started ...'),
                 "stdout: %r" % 'check ok',
@@ -437,15 +526,15 @@ class CommandActionTest(LogCaptureTestCase):
     def testExecuteActionChangeCtags(self):
         self.assertRaises(AttributeError, getattr, self.__action, "ROST")
         self.__action.ROST = "192.0.2.0"
-        self.assertEqual(self.__action.ROST,"192.0.2.0")
+        self.assertEqual(self.__action.ROST, "192.0.2.0")
 
     def testExecuteActionUnbanAinfo(self):
         aInfo = CallingMap({
             'ABC': "123",
             'ip': '192.0.2.1',
             'F-*': lambda self: {
-            'fid': 111,
-            'fport': 222,
+                'fid': 111,
+                'fport': 222,
                 'user': "tester"
             }
         })
@@ -474,14 +563,16 @@ class CommandActionTest(LogCaptureTestCase):
             r'''printf %b "foreign input:\n'''
             r''' -- $f2bV_A --\n'''
             r''' -- $f2bV_B --\n'''
-            r''' -- $(echo -n $f2bV_C) --''' # echo just replaces \n to test it as single line
+            r''' -- $(echo -n $f2bV_C) --'''  # echo just replaces \n to test it as single line
             r'''"''',
             varsDict={
-            'f2bV_A': 'I\'m a hacker; && $(echo $f2bV_B)',
-            'f2bV_B': 'I"m very bad hacker',
-            'f2bV_C': '`Very | very\n$(bad & worst hacker)`'
-        }))
-        self.assertLogged(r"""foreign input:""",
+                'f2bV_A': 'I\'m a hacker; && $(echo $f2bV_B)',
+                'f2bV_B': 'I"m very bad hacker',
+                'f2bV_C': '`Very | very\n$(bad & worst hacker)`'
+            }
+        ))
+        self.assertLogged(
+            r"""foreign input:""",
             ' -- I\'m a hacker; && $(echo $f2bV_B) --',
             ' -- I"m very bad hacker --',
             ' -- `Very | very $(bad & worst hacker)` --', all=True)
@@ -599,8 +690,10 @@ class CommandActionTest(LogCaptureTestCase):
             "stderr: 'The rain in Spain stays mainly in the plain'\n")
 
     def testCallingMap(self):
-        mymap = CallingMap(callme=lambda self: str(10), error=lambda self: int('a'),
-            dontcallme= "string", number=17)
+        mymap = CallingMap(
+            callme=lambda self: str(10),
+            error=lambda self: int('a'),
+            dontcallme="string", number=17)
 
         # Should work fine
         self.assertEqual(
@@ -650,28 +743,28 @@ class CommandActionTest(LogCaptureTestCase):
             'b': lambda self: self['a'] + 6,
             'c': ''
         })
-        s = repr(m); # only stored values (no calculated)
+        s = repr(m)  # only stored values (no calculated)
         self.assertNotIn("'a': ", s)
         self.assertNotIn("'b': ", s)
         self.assertIn("'c': ''", s)
 
-        s = m._asrepr(True) # all values (including calculated)
+        s = m._asrepr(True)  # all values (including calculated)
         self.assertIn("'a': 5", s)
         self.assertIn("'b': 11", s)
         self.assertIn("'c': ''", s)
 
-        m['c'] = lambda self: self['xxx'] + 7; # unresolvable
+        m['c'] = lambda self: self['xxx'] + 7  # unresolvable
         s = m._asrepr(True)
         self.assertIn("'a': 5", s)
         self.assertIn("'b': 11", s)
-        self.assertIn("'c': ", s) # presents as callable
-        self.assertNotIn("'c': ''", s) # but not empty
+        self.assertIn("'c': ", s)  # presents as callable
+        self.assertNotIn("'c': ''", s)  # but not empty
 
     def testActionsIdleMode(self):
         a = Actions(DummyJail())
-        a.sleeptime = 0.0001;   # don't need to wait long
+        a.sleeptime = 0.0001  # don't need to wait long
         # enter idle mode right now (start idle):
-        a.idle = True;
+        a.idle = True
         # start:
         a.start()
         # wait for enter/leave of idle mode:

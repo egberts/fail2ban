@@ -24,18 +24,18 @@ __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2011-2012 Lee Clemens, 2012 Y
 __license__ = "GPL"
 
 from future import standard_library
-standard_library.install_aliases()
+
 from builtins import object
 
 import logging
-import math
 import random
 import queue
 
 from .actions import Actions
-from ..helpers import getLogger, _as_bool, extractOptions, MyTime
+from ..helpers import getLogger, _as_bool, extractOptions
 from .mytime import MyTime
 
+standard_library.install_aliases()
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
 
@@ -67,23 +67,23 @@ class Jail(object):
     status
     """
 
-    #Known backends. Each backend should have corresponding __initBackend method
+    # Known backends. Each backend should have corresponding __initBackend method
     # yoh: stored in a list instead of a tuple since only
     #      list had .index until 2.6
     _BACKENDS = ['pyinotify', 'gamin', 'polling', 'systemd']
 
-    def __init__(self, name, backend = "auto", db=None):
+    def __init__(self, name, backend="auto", db=None):
         self.__db = db
         # 26 based on iptable chain name limit of 30 less len('f2b-')
         if len(name) >= 26:
             logSys.warning("Jail name %r might be too long and some commands "
-                            "might not function correctly. Please shorten"
-                            % name)
+                           "might not function correctly. Please shorten"
+                           % name)
         self.__name = name
         self.__queue = Queue.Queue()
         self.__filter = None
         # Extra parameters for increase ban time
-        self._banExtra = {};
+        self._banExtra = {}
         logSys.info("Creating new jail '%s'" % self.name)
         if backend is not None:
             self._setBackend(backend)
@@ -94,16 +94,16 @@ class Jail(object):
 
     def _setBackend(self, backend):
         backend, beArgs = extractOptions(backend)
-        backend = backend.lower()       # to assure consistent matching
+        backend = backend.lower()  # to assure consistent matching
 
         backends = self._BACKENDS
         if backend != 'auto':
             # we have got strict specification of the backend to use
             if not (backend in self._BACKENDS):
                 logSys.error("Unknown backend %s. Must be among %s or 'auto'"
-                    % (backend, backends))
+                             % (backend, backends))
                 raise ValueError("Unknown backend %s. Must be among %s or 'auto'"
-                    % (backend, backends))
+                                 % (backend, backends))
             # so explore starting from it till the 'end'
             backends = backends[backends.index(backend):]
 
@@ -117,8 +117,8 @@ class Jail(object):
                 else:
                     logSys.info("Initiated %r backend" % b)
                 self.__actions = Actions(self)
-                return                  # we are done
-            except ImportError as e: # pragma: no cover
+                return  # we are done
+            except ImportError as e:  # pragma: no cover
                 # Log debug if auto, but error if specific
                 logSys.log(
                     logging.DEBUG if backend == "auto" else logging.ERROR,
@@ -147,7 +147,7 @@ class Jail(object):
         logSys.info("Jail '%s' uses pyinotify %r" % (self.name, kwargs))
         self.__filter = FilterPyinotify(self, **kwargs)
 
-    def _initSystemd(self, **kwargs): # pragma: systemd no cover
+    def _initSystemd(self, **kwargs):  # pragma: systemd no cover
         # Try to import systemd
         from .filtersystemd import FilterSystemd
         logSys.info("Jail '%s' uses systemd %r" % (self.name, kwargs))
@@ -167,7 +167,7 @@ class Jail(object):
 
     @database.setter
     def database(self, value):
-        self.__db = value;
+        self.__db = value
 
     @property
     def filter(self):
@@ -198,7 +198,7 @@ class Jail(object):
         return [
             ("Filter", self.filter.status(flavor=flavor)),
             ("Actions", self.actions.status(flavor=flavor)),
-            ]
+        ]
 
     @property
     def hasFailTickets(self):
@@ -228,11 +228,11 @@ class Jail(object):
 
     def setBanTimeExtra(self, opt, value):
         # merge previous extra with new option:
-        be = self._banExtra;
+        be = self._banExtra
         if value == '':
             value = None
         if value is not None:
-            be[opt] = value;
+            be[opt] = value
         elif opt in be:
             del be[opt]
         logSys.info('Set banTime.%s = %s', opt, value)
@@ -241,7 +241,7 @@ class Jail(object):
             if be.get(opt) and self.database is None:
                 logSys.warning("ban time increment is not available as long jail database is not set")
         if opt in ['maxtime', 'rndtime']:
-            if not value is None:
+            if value is not None:
                 be[opt] = MyTime.str2seconds(value)
         # prepare formula lambda:
         if opt in ['formula', 'factor', 'maxtime', 'rndtime', 'multipliers'] or be.get('evformula', None) is None:
@@ -253,7 +253,7 @@ class Jail(object):
             banFactor = eval(be.get('factor', "1"))
             if len(multipliers):
                 evformula = lambda ban, banFactor=banFactor: (
-                    ban.Time * banFactor * multipliers[ban.Count if ban.Count < len(multipliers) else -1]
+                        ban.Time * banFactor * multipliers[ban.Count if ban.Count < len(multipliers) else -1]
                 )
             else:
                 formula = be.get('formula', 'ban.Time * (1<<(ban.Count if ban.Count<20 else 20)) * banFactor')
@@ -269,7 +269,7 @@ class Jail(object):
                 evformula = lambda ban, evformula=evformula: (evformula(ban) + random.random() * rndtime)
             # set to extra dict:
             be['evformula'] = evformula
-        #logSys.info('banTimeExtra : %s' % json.dumps(be))
+        # logSys.info('banTimeExtra : %s' % json.dumps(be))
 
     def getBanTimeExtra(self, opt=None):
         if opt is not None:
@@ -288,18 +288,20 @@ class Jail(object):
         try:
             if self.database is not None:
                 if self._banExtra.get('increment'):
-                    forbantime = None;
+                    forbantime = None
                     if correctBanTime:
                         correctBanTime = self.getMaxBanTime()
                 else:
                     # use ban time as search time if we have not enabled a increasing:
                     forbantime = self.actions.getBanTime()
                 for ticket in self.database.getCurrentBans(jail=self, forbantime=forbantime,
-                    correctBanTime=correctBanTime, maxmatches=self.filter.failManager.maxMatches
-                ):
+                                                           correctBanTime=correctBanTime,
+                                                           maxmatches=self.filter.failManager.maxMatches
+                                                           ):
                     try:
-                        #logSys.debug('restored ticket: %s', ticket)
-                        if self.filter.inIgnoreIPList(ticket.getIP(), log_ignore=True): continue
+                        # logSys.debug('restored ticket: %s', ticket)
+                        if self.filter.inIgnoreIPList(ticket.getIP(), log_ignore=True):
+                            continue
                         # mark ticked was restored from database - does not put it again into db:
                         ticket.restored = True
                         # correct start time / ban time (by the same end of ban):
@@ -311,12 +313,12 @@ class Jail(object):
                         if btm != -1 and btm <= 0:
                             continue
                         self.putFailTicket(ticket)
-                    except Exception as e: # pragma: no cover
+                    except Exception as e:  # pragma: no cover
                         logSys.error('Restore ticket failed: %s', e,
-                            exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
-        except Exception as e: # pragma: no cover
+                                     exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
+        except Exception as e:  # pragma: no cover
             logSys.error('Restore bans failed: %s', e,
-                exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                         exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     def start(self):
         """Start the jail, by starting filter and actions threads.
@@ -337,15 +339,15 @@ class Jail(object):
             logSys.debug("Stopping jail %r", self.name)
         for obj in (self.filter, self.actions):
             try:
-                ## signal to stop filter / actions:
+                # signal to stop filter / actions:
                 if stop:
                     obj.stop()
-                ## wait for end of threads:
+                # wait for end of threads:
                 if join:
                     obj.join()
             except Exception as e:
                 logSys.error("Stop %r of jail %r failed: %s", obj, self.name, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                             exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
         if join:
             logSys.info("Jail %r stopped", self.name)
 

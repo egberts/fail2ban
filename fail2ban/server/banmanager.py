@@ -49,15 +49,15 @@ class BanManager(object):
     # Initialize members with default values.
 
     def __init__(self):
-        ## Mutex used to protect the ban list.
+        # Mutex used to protect the ban list.
         self.__lock = Lock()
-        ## The ban list.
+        # The ban list.
         self.__banList = dict()
-        ## The amount of time an IP address gets banned.
+        # The amount of time an IP address gets banned.
         self.__banTime = 600
-        ## Total number of banned IP address
+        # Total number of banned IP address
         self.__banTotal = 0
-        ## The time for next unban process (for performance and load reasons):
+        # The time for next unban process (for performance and load reasons):
         self.__nextUnbanTime = BanTicket.MAX_TIME
 
     ##
@@ -67,7 +67,7 @@ class BanManager(object):
     # @param value the time
 
     def setBanTime(self, value):
-            self.__banTime = int(value)
+        self.__banTime = int(value)
 
     ##
     # Get the ban time.
@@ -76,7 +76,7 @@ class BanManager(object):
     # @return the time
 
     def getBanTime(self):
-            return self.__banTime
+        return self.__banTime
 
     ##
     # Set the total number of banned address.
@@ -84,7 +84,7 @@ class BanManager(object):
     # @param value total number
 
     def setBanTotal(self, value):
-            self.__banTotal = value
+        self.__banTotal = value
 
     ##
     # Get the total number of banned address.
@@ -92,7 +92,7 @@ class BanManager(object):
     # @return the total number
 
     def getBanTotal(self):
-            return self.__banTotal
+        return self.__banTotal
 
     ##
     # Returns a copy of the IP list.
@@ -106,14 +106,15 @@ class BanManager(object):
             lst = []
             for ticket in list(self.__banList.values()):
                 eob = ticket.getEndOfBanTime(self.__banTime)
-                lst.append((ticket,eob))
+                lst.append((ticket, eob))
         lst.sort(key=lambda t: t[1])
         t2s = MyTime.time2str
         if withTime:
-            return ['%s \t%s + %d = %s' % (
-                    t[0].getID(),
-                    t2s(t[0].getTime()), t[0].getBanTime(self.__banTime), t2s(t[1])
-                ) for t in lst]
+            return ['%s \t%s + %d = %s' %
+                    (
+                        t[0].getID(),
+                        t2s(t[0].getTime()), t[0].getBanTime(self.__banTime), t2s(t[1])
+                    ) for t in lst]
         return [t[0].getID() for t in lst]
 
     ##
@@ -123,7 +124,7 @@ class BanManager(object):
 
     def __iter__(self):
         # ensure iterator is safe - traverse over the list in snapshot created within lock (GIL):
-            return iter(list(self.__banList.values()))
+        return iter(list(self.__banList.values()))
 
     ##
     # Returns normalized value
@@ -153,7 +154,7 @@ class BanManager(object):
                 resolver.lifetime = timeout
                 resolver.timeout = old_div(timeout, 2)
                 self.dnsResolver = resolver
-            except ImportError as e: # pragma: no cover
+            except ImportError as e:  # pragma: no cover
                 logSys.error("dnspython package is required but could not be imported")
                 return_dict["error"] = repr(e)
                 return_dict["asn"].append("error")
@@ -195,19 +196,21 @@ class BanManager(object):
                     return_dict["asn"].append("nxdomain")
                     return_dict["country"].append("nxdomain")
                     return_dict["rir"].append("nxdomain")
-                except (dns.exception.DNSException, dns.resolver.NoNameservers, dns.exception.Timeout) as dnse: # pragma: no cover
+                except (dns.exception.DNSException,
+                        dns.resolver.NoNameservers,
+                        dns.exception.Timeout) as dnse:  # pragma: no cover
                     logSys.error("DNSException %r querying Cymru for %s TXT", dnse, question)
                     if logSys.level <= logging.DEBUG:
                         logSys.exception(dnse)
                     return_dict["error"] = repr(dnse)
                     break
-                except Exception as e: # pragma: no cover
+                except Exception as e:  # pragma: no cover
                     logSys.error("Unhandled Exception %r querying Cymru for %s TXT", e, question)
                     if logSys.level <= logging.DEBUG:
                         logSys.exception(e)
                     return_dict["error"] = repr(e)
                     break
-        except Exception as e: # pragma: no cover
+        except Exception as e:  # pragma: no cover
             logSys.error("Failure looking up extended Cymru info: %s", e)
             if logSys.level <= logging.DEBUG:
                 logSys.exception(e)
@@ -338,12 +341,12 @@ class BanManager(object):
             # Gets the list of ticket to remove (thereby correct next unban time).
             unBanList = {}
             nextUnbanTime = BanTicket.MAX_TIME
-            for fid,ticket in list(self.__banList.items()):
+            for fid, ticket in list(self.__banList.items()):
                 # current time greater as end of ban - timed out:
                 eob = ticket.getEndOfBanTime(self.__banTime)
                 if time > eob:
                     unBanList[fid] = ticket
-                    if len(unBanList) >= maxCount: # stop search cycle, so reset back the next check time
+                    if len(unBanList) >= maxCount:  # stop search cycle, so reset back the next check time
                         nextUnbanTime = self.__nextUnbanTime
                         break
                 elif nextUnbanTime > eob:
@@ -358,7 +361,8 @@ class BanManager(object):
                         del self.__banList[fid]
                 else:
                     # create new dictionary without items to be deleted:
-                    self.__banList = dict((fid,ticket) for fid,ticket in list(self.__banList.items()) \
+                    self.__banList = dict(
+                        (fid, ticket) for fid, ticket in list(self.__banList.items())
                         if fid not in unBanList)
 
             # return list of tickets:

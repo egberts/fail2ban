@@ -22,6 +22,7 @@ __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2011-2013 Yaroslav Halchenko"
 __license__ = "GPL"
 
 from builtins import str
+from .utils import CONFIG_DIR
 
 import glob
 import logging
@@ -45,7 +46,6 @@ from .utils import LogCaptureTestCase, with_tmpdir
 TEST_FILES_DIR = os.path.join(os.path.dirname(__file__), "files")
 TEST_FILES_DIR_SHARE_CFG = {}
 
-from .utils import CONFIG_DIR
 CONFIG_DIR_SHARE_CFG = unittest.F2B.share_config
 
 IMPERFECT_CONFIG = os.path.join(os.path.dirname(__file__), 'config')
@@ -83,10 +83,10 @@ option = %s
 
     def _remove(self, fname):
         os.unlink("%s/%s" % (self.d, fname))
-        self.assertTrue(self.c.read('c'))   # we still should have some
+        self.assertTrue(self.c.read('c'))  # we still should have some
 
     def _getoption(self, f='c'):
-        self.assertTrue(self.c.read(f)) # we got some now
+        self.assertTrue(self.c.read(f))  # we got some now
         return self.c.getOptions('section', [("int", 'option')])['option']
 
     def testConvert(self):
@@ -94,13 +94,16 @@ option = %s
         self.c.set("Definition", "a", "1")
         self.c.set("Definition", "b", "1")
         self.c.set("Definition", "c", "test")
-        opts = self.c.getOptions("Definition",
+        opts = self.c.getOptions(
+            "Definition",
             (('int', 'a', 0), ('bool', 'b', 0), ('int', 'c', 0)))
         self.assertSortedEqual(opts, {'a': 1, 'b': True, 'c': 0})
-        opts = self.c.getOptions("Definition",
+        opts = self.c.getOptions(
+            "Definition",
             (('int', 'a'), ('bool', 'b'), ('int', 'c')))
         self.assertSortedEqual(opts, {'a': 1, 'b': True, 'c': None})
-        opts = self.c.getOptions("Definition",
+        opts = self.c.getOptions(
+            "Definition",
             {'a': ('int', 0), 'b': ('bool', 0), 'c': ('int', 0)})
         self.assertSortedEqual(opts, {'a': 1, 'b': True, 'c': 0})
 
@@ -123,11 +126,11 @@ option = %s
         self.assertEqual(self._getoption(), 1)
         self._write("c.conf", "2")      # overwrite
         self.assertEqual(self._getoption(), 2)
-        self._write("c.d/98.conf", "998") # add 1st override in .d/
+        self._write("c.d/98.conf", "998")  # add 1st override in .d/
         self.assertEqual(self._getoption(), 998)
-        self._write("c.d/90.conf", "990") # add previously sorted override in .d/
-        self.assertEqual(self._getoption(), 998) #  should stay the same
-        self._write("c.d/99.conf", "999") # now override in a way without sorting we possibly get a failure
+        self._write("c.d/90.conf", "990")  # add previously sorted override in .d/
+        self.assertEqual(self._getoption(), 998)  # should stay the same
+        self._write("c.d/99.conf", "999")  # now override in a way without sorting we possibly get a failure
         self.assertEqual(self._getoption(), 999)
         self._write("c.local", "3")     # add override in .local
         self.assertEqual(self._getoption(), 3)
@@ -175,10 +178,11 @@ test = D
 [Definition]
 oafter = 4
 """)
+
         class TestDefConfReader(DefinitionInitConfigReader):
             _configOpts = {
-              "option": ["int", None],
-              "oafter": ["int", None],
+                "option": ["int", None],
+                "oafter": ["int", None],
                 "test":   ["string", None],
             }
         self.c = TestDefConfReader('c', 'option', {})
@@ -209,10 +213,10 @@ z = 3%(__name__)s
         self.assertTrue(self.c.read('i'))
         self.assertEqual(self.c.sections(), ['section', 'section2'])
         self.assertEqual(self.c.get('section', 'y'), '4a')   # basic interpolation works
-        self.assertEqual(self.c.get('section', 'e'), '5${b}') # no extended interpolation
-        self.assertEqual(self.c.get('section', 'z'), 'section') # __name__ works
-        self.assertEqual(self.c.get('section', 'zz'), 'thesection') # __name__ works even 'delayed'
-        self.assertEqual(self.c.get('section2', 'z'), '3section2') # and differs per section ;)
+        self.assertEqual(self.c.get('section', 'e'), '5${b}')  # no extended interpolation
+        self.assertEqual(self.c.get('section', 'z'), 'section')  # __name__ works
+        self.assertEqual(self.c.get('section', 'zz'), 'thesection')  # __name__ works even 'delayed'
+        self.assertEqual(self.c.get('section2', 'z'), '3section2')  # and differs per section ;)
 
     def testComments(self):
         self.assertFalse(self.c.read('g'))  # nothing is there yet
@@ -294,11 +298,14 @@ class JailReaderTest(LogCaptureTestCase):
         self.assertTrue(jail.read())
         self.assertFalse(jail.getOptions())
         self.assertTrue(jail.isEnabled())
-        self.assertLogged("Found no accessible config files for 'filter.d/catchallthebadies' under %s" % IMPERFECT_CONFIG)
+        self.assertLogged(
+            "Found no accessible config files for 'filter.d/catchallthebadies'"
+            "under %s" % IMPERFECT_CONFIG)
         self.assertLogged('Unable to read the filter')
 
     def testJailActionBrokenDef(self):
-        jail = JailReader('brokenactiondef', basedir=IMPERFECT_CONFIG,
+        jail = JailReader(
+            'brokenactiondef', basedir=IMPERFECT_CONFIG,
             share_config=IMPERFECT_CONFIG_SHARE_CFG)
         self.assertTrue(jail.read())
         self.assertFalse(jail.getOptions())
@@ -306,7 +313,8 @@ class JailReaderTest(LogCaptureTestCase):
         self.assertLogged("Invalid action definition 'joho[foo'")
 
     def testJailLogTimeZone(self):
-        jail = JailReader('tz_correct', basedir=IMPERFECT_CONFIG,
+        jail = JailReader(
+            'tz_correct', basedir=IMPERFECT_CONFIG,
             share_config=IMPERFECT_CONFIG_SHARE_CFG)
         self.assertTrue(jail.read())
         self.assertTrue(jail.getOptions())
@@ -314,7 +322,8 @@ class JailReaderTest(LogCaptureTestCase):
         self.assertEqual(jail.options['logtimezone'], 'UTC+0200')
 
     def testJailFilterBrokenDef(self):
-        jail = JailReader('brokenfilterdef', basedir=IMPERFECT_CONFIG,
+        jail = JailReader(
+            'brokenfilterdef', basedir=IMPERFECT_CONFIG,
             share_config=IMPERFECT_CONFIG_SHARE_CFG)
         self.assertTrue(jail.read())
         self.assertFalse(jail.getOptions())
@@ -323,7 +332,9 @@ class JailReaderTest(LogCaptureTestCase):
 
     def testStockSSHJail(self):
         unittest.F2B.SkipIfCfgMissing(stock=True)
-        jail = JailReader('sshd', basedir=CONFIG_DIR, share_config=CONFIG_DIR_SHARE_CFG) # we are running tests from root project dir atm
+        jail = JailReader(
+            'sshd', basedir=CONFIG_DIR,
+            share_config=CONFIG_DIR_SHARE_CFG)  # we are running tests from root project dir atm
         self.assertTrue(jail.read())
         self.assertTrue(jail.getOptions())
         self.assertFalse(jail.isEnabled())
@@ -332,8 +343,9 @@ class JailReaderTest(LogCaptureTestCase):
         self.assertEqual(jail.getName(), 'ssh-funky-blocker')
 
     def testOverrideFilterOptInJail(self):
-        unittest.F2B.SkipIfCfgMissing(stock=True); # expected include of common.conf
-        jail = JailReader('sshd-override-flt-opts', basedir=IMPERFECT_CONFIG,
+        unittest.F2B.SkipIfCfgMissing(stock=True)  # expected include of common.conf
+        jail = JailReader(
+            'sshd-override-flt-opts', basedir=IMPERFECT_CONFIG,
             share_config=IMPERFECT_CONFIG_SHARE_CFG, force_enable=True)
         self.assertTrue(jail.read())
         self.assertTrue(jail.getOptions())
@@ -341,13 +353,16 @@ class JailReaderTest(LogCaptureTestCase):
         stream = jail.convert()
         # check filter options are overriden with values specified directly in jail:
         # prefregex:
-        self.assertEqual([['set', 'sshd-override-flt-opts', 'prefregex', '^Test']],
+        self.assertEqual(
+            [['set', 'sshd-override-flt-opts', 'prefregex', '^Test']],
             [o for o in stream if len(o) > 2 and o[2] == 'prefregex'])
         # journalmatch:
-        self.assertEqual([['set', 'sshd-override-flt-opts', 'addjournalmatch', '_COMM=test']],
+        self.assertEqual(
+            [['set', 'sshd-override-flt-opts', 'addjournalmatch', '_COMM=test']],
             [o for o in stream if len(o) > 2 and o[2] == 'addjournalmatch'])
         # maxlines:
-        self.assertEqual([['set', 'sshd-override-flt-opts', 'maxlines', 2]],
+        self.assertEqual(
+            [['set', 'sshd-override-flt-opts', 'maxlines', 2]],
             [o for o in stream if len(o) > 2 and o[2] == 'maxlines'])
         # usedns should be before all regex in jail stream:
         usednsidx = stream.index(['set', 'sshd-override-flt-opts', 'usedns', 'no'])
@@ -355,21 +370,24 @@ class JailReaderTest(LogCaptureTestCase):
         for o in stream:
             self.assertFalse(len(o) > 2 and o[2].endswith('regex'))
             i += 1
-            if i > usednsidx: break
+            if i > usednsidx:
+                break
 
     def testLogTypeOfBackendInJail(self):
-        unittest.F2B.SkipIfCfgMissing(stock=True); # expected include of common.conf
+        unittest.F2B.SkipIfCfgMissing(stock=True)  # expected include of common.conf
         # test twice to check cache works peoperly:
         for i in (1, 2):
             # backend-related, overwritten in definition, specified in init parameters:
             for prefline in ('JRNL', 'FILE', 'TEST', 'INIT'):
-                jail = JailReader('checklogtype_'+prefline.lower(), basedir=IMPERFECT_CONFIG,
+                jail = JailReader(
+                    'checklogtype_'+prefline.lower(), basedir=IMPERFECT_CONFIG,
                     share_config=IMPERFECT_CONFIG_SHARE_CFG, force_enable=True)
                 self.assertTrue(jail.read())
                 self.assertTrue(jail.getOptions())
                 stream = jail.convert()
                 # 'JRNL' for systemd, 'FILE' for file backend, 'TEST' for custom logtype (overwrite it):
-                self.assertEqual([['set', jail.getName(), 'addfailregex', '^%s failure from <HOST>$' % prefline]],
+                self.assertEqual(
+                    [['set', jail.getName(), 'addfailregex', '^%s failure from <HOST>$' % prefline]],
                     [o for o in stream if len(o) > 2 and o[2] == 'addfailregex'])
 
     def testSplitOption(self):
@@ -380,16 +398,22 @@ class JailReaderTest(LogCaptureTestCase):
         self.assertEqual(expected, result)
 
         self.assertEqual(('mail.who_is', {}), extractOptions("mail.who_is"))
-        self.assertEqual(('mail.who_is', {'a':'cat', 'b':'dog'}), extractOptions("mail.who_is[a=cat,b=dog]"))
+        self.assertEqual(
+            (
+                'mail.who_is',
+                {'a': 'cat', 'b':' dog'}
+            ),
+            extractOptions("mail.who_is[a=cat,b=dog]")
+        )
         self.assertEqual(('mail--ho_is', {}), extractOptions("mail--ho_is"))
 
         self.assertEqual(('mail--ho_is', {}), extractOptions("mail--ho_is['s']"))
-        #print(self.getLog())
-        #self.assertLogged("Invalid argument ['s'] in ''s''")
+        # print(self.getLog())
+        # self.assertLogged("Invalid argument ['s'] in ''s''")
 
         self.assertEqual(('mail', {'a': ','}), extractOptions("mail[a=',']"))
 
-        #self.assertRaises(ValueError, extractOptions ,'mail-how[')
+        # self.assertRaises(ValueError, extractOptions ,'mail-how[')
 
         # Empty option
         option = "abc[]"
@@ -398,7 +422,10 @@ class JailReaderTest(LogCaptureTestCase):
         self.assertEqual(expected, result)
 
         # More complex examples
-        option = 'option[opt01=abc,opt02="123",opt03="with=okay?",opt04="andwith,okay...",opt05="how about spaces",opt06="single\'in\'double",opt07=\'double"in"single\',  opt08= leave some space, opt09=one for luck, opt10=, opt11=]'
+        option = 'option[opt01=abc,opt02="123",opt03="with=okay?",opt04="andwith,'
+                 'okay...",opt05="how about spaces",opt06="single\'in\'double",opt'
+                 '07=\'double"in"single\',  opt08= leave some space, opt09=one for'
+                 ' luck, opt10=, opt11=]'
         expected = ('option', {
             'opt01': "abc",
             'opt02': "123",

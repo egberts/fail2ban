@@ -67,7 +67,7 @@ class RequestHandler(asynchat.async_chat):
             try:
                 conn.shutdown(socket.SHUT_RDWR)
                 conn.close()
-            except socket.error: # pragma: no cover - normally unreachable
+            except socket.error:  # pragma: no cover - normally unreachable
                 pass
 
     def handle_close(self):
@@ -75,7 +75,7 @@ class RequestHandler(asynchat.async_chat):
         asynchat.async_chat.handle_close(self)
 
     def collect_incoming_data(self, data):
-        #logSys.debug("Received raw data: " + str(data))
+        # logSys.debug("Received raw data: " + str(data))
         self.__buffer.append(data)
 
     # exception identifies deserialization errors (exception by load in pickle):
@@ -103,7 +103,7 @@ class RequestHandler(asynchat.async_chat):
                 message = loads(message)
             except Exception as e:
                 logSys.error('PROTO-error: load message failed: %s', e,
-                    exc_info=logSys.getEffectiveLevel()<logging.DEBUG)
+                             exc_info=logSys.getEffectiveLevel() < logging.DEBUG)
                 raise RequestHandler.LoadError(e)
             # Gives the message to the transmitter.
             if self.__transmitter:
@@ -115,9 +115,9 @@ class RequestHandler(asynchat.async_chat):
             # Sends the response to the client.
             self.push(message + CSPROTO.END)
         except Exception as e:
-            if not isinstance(e, RequestHandler.LoadError): # pragma: no cover - normally unreachable
+            if not isinstance(e, RequestHandler.LoadError):  # pragma: no cover - normally unreachable
                 logSys.error("Caught unhandled exception: %r", e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                             exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
             # Sends the response to the client.
             message = dumps("ERROR: %s" % e, HIGHEST_PROTOCOL)
             self.push(message + CSPROTO.END)
@@ -133,7 +133,7 @@ class RequestHandler(asynchat.async_chat):
             # Sends the response to the client.
             message = dumps("ERROR: %s" % e2, HIGHEST_PROTOCOL)
             self.push(message + CSPROTO.END)
-        except Exception as e: # pragma: no cover - normally unreachable
+        except Exception as e:  # pragma: no cover - normally unreachable
             pass
         self.close_when_done()
 
@@ -145,14 +145,15 @@ def loop(active, timeout=None, use_poll=False, err_count=None):
     to avoid loop timeout mistake: different in poll and poll2 (sec vs ms),
     and to prevent sporadic errors like EBADF 'Bad file descriptor' etc. (see gh-161)
     """
-    if not err_count: err_count={}
+    if not err_count:
+        err_count = {}
     err_count['listen'] = 0
     if timeout is None:
         timeout = Utils.DEFAULT_SLEEP_TIME
     poll = asyncore.poll
     if callable(use_poll):
         poll = use_poll
-    elif use_poll and asyncore.poll2 and hasattr(asyncore.select, 'poll'): # pragma: no cover
+    elif use_poll and asyncore.poll2 and hasattr(asyncore.select, 'poll'):  # pragma: no cover
         logSys.debug('Server listener (select) uses poll')
         # poll2 expected a timeout in milliseconds (but poll and loop in seconds):
         timeout = float(timeout) / 1000
@@ -170,17 +171,17 @@ def loop(active, timeout=None, use_poll=False, err_count=None):
             if err_count['listen'] < 20:
                 # errno.ENOTCONN - 'Socket is not connected'
                 # errno.EBADF - 'Bad file descriptor'
-                if e.args[0] in (errno.ENOTCONN, errno.EBADF): # pragma: no cover (too sporadic)
+                if e.args[0] in (errno.ENOTCONN, errno.EBADF):  # pragma: no cover (too sporadic)
                     logSys.info('Server connection was closed: %s', str(e))
                 else:
                     logSys.error('Server connection was closed: %s', str(e))
             elif err_count['listen'] == 20:
                 logSys.exception(e)
                 logSys.error('Too many errors - stop logging connection errors')
-            elif err_count['listen'] > 100: # pragma: no cover - normally unreachable
+            elif err_count['listen'] > 100:  # pragma: no cover - normally unreachable
                 if (
-                       e.args[0] == errno.EMFILE # [Errno 24] Too many open files
-                    or sum(err_count.values()) > 1000
+                       e.args[0] == errno.EMFILE  # [Errno 24] Too many open files
+                       or sum(err_count.values()) > 1000
                 ):
                     logSys.critical("Too many errors - critical count reached %r", err_count)
                     break
@@ -212,23 +213,23 @@ class AsyncServer(asyncore.dispatcher):
     def handle_accept(self):
         try:
             conn, addr = self.accept()
-        except Exception as e: # pragma: no cover
+        except Exception as e:  # pragma: no cover
             self.__errCount['accept'] += 1
             if self.__errCount['accept'] < 20:
                 logSys.warning("Accept socket error: %s", e,
-                    exc_info=(self.__errCount['accept'] <= 1))
+                               exc_info=(self.__errCount['accept'] <= 1))
             elif self.__errCount['accept'] == 20:
                 logSys.error("Too many acceptor errors - stop logging errors")
             elif self.__errCount['accept'] > 100:
                 if (
-                      (isinstance(e, socket.error) and e.args[0] == errno.EMFILE) # [Errno 24] Too many open files
-                    or sum(self.__errCount.values()) > 1000
+                      (isinstance(e, socket.error) and e.args[0] == errno.EMFILE)  # [Errno 24] Too many open files
+                        or sum(self.__errCount.values()) > 1000
                 ):
                     logSys.critical("Too many errors - critical count reached %r", self.__errCount)
                     self.stop()
             return
         if self.__errCount['accept']:
-            self.__errCount['accept'] -= 1;
+            self.__errCount['accept'] -= 1
         AsyncServer.__markCloseOnExec(conn)
         # Creates an instance of the handler class to handle the
         # request/response on the incoming connection.
@@ -256,7 +257,7 @@ class AsyncServer(asyncore.dispatcher):
         self.set_reuse_addr()
         try:
             self.bind(sock)
-        except Exception: # pragma: no cover
+        except Exception:  # pragma: no cover
             raise AsyncServerException("Unable to bind socket %s" % self.__sock)
         AsyncServer.__markCloseOnExec(self.socket)
         self.listen(1)
@@ -279,7 +280,7 @@ class AsyncServer(asyncore.dispatcher):
             if self.socket:
                 try:
                     self.socket.shutdown(socket.SHUT_RDWR)
-                except socket.error: # pragma: no cover - normally unreachable
+                except socket.error:  # pragma: no cover - normally unreachable
                     pass
             # close connection:
             asyncore.dispatcher.close(self)
@@ -321,7 +322,7 @@ class AsyncServer(asyncore.dispatcher):
     def _remove_sock(self):
         try:
             os.remove(self.__sock)
-        except OSError as e: # pragma: no cover
+        except OSError as e:  # pragma: no cover
             if e.errno != errno.ENOENT:
                 raise
 
@@ -335,7 +336,7 @@ class AsyncServer(asyncore.dispatcher):
     def __markCloseOnExec(sock):
         fd = sock.fileno()
         flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-        fcntl.fcntl(fd, fcntl.F_SETFD, flags|fcntl.FD_CLOEXEC)
+        fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
 
 
 ##

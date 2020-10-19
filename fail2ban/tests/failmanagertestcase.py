@@ -152,7 +152,7 @@ class AddFailure(unittest.TestCase):
     def testbanOK(self):
         self._addDefItems()
         self.__failManager.setMaxRetry(5)
-        #ticket = FailTicket('193.168.0.128', None)
+        # ticket = FailTicket('193.168.0.128', None)
         ticket = self.__failManager.toBan()
         self.assertEqual(ticket.getIP(), "193.168.0.128")
         self.assertTrue(isinstance(ticket.getIP(), (str, IPAddr)))
@@ -233,17 +233,20 @@ class FailmanagerComplex(unittest.TestCase):
         class _ip(list):
             def __str__(self):
                 return '.'.join(map(str, self))
+
             def __repr__(self):
                 return str(self)
+
             def __key__(self):
                 return str(self)
+
             def __hash__(self):
-                #return (int)(struct.unpack('I', struct.pack("BBBB",*self))[0])
+                # return (int)(struct.unpack('I', struct.pack("BBBB",*self))[0])
                 return (int)(self[0] << 24 | self[1] << 16 | self[2] << 8 | self[3])
         i = 0
-        c = [127,0,0,0]
+        c = [127, 0, 0, 0]
         while i < maxips:
-            for n in range(3,0,-1):
+            for n in range(3, 0, -1):
                 if c[n] < 255:
                     c[n] += 1
                     break
@@ -263,4 +266,3 @@ class FailmanagerComplex(unittest.TestCase):
                 self.assertEqual(str(ip), '127.0.255.255')
             elif i == 65535:
                 self.assertEqual(str(ip), '127.1.0.0')
-

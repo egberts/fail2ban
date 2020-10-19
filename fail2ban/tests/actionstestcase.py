@@ -74,7 +74,7 @@ class ExecuteActions(LogCaptureTestCase):
 		self.assertEqual(len(self.__actions), 0)
 
 		self.__actions.setBanTime(127)
-		self.assertEqual(self.__actions.getBanTime(),127)
+		self.assertEqual(self.__actions.getBanTime(), 127)
 		self.assertRaises(ValueError, self.__actions.removeBannedIP, '127.0.0.1')
 
 	def testAddBannedIP(self):
@@ -94,10 +94,15 @@ class ExecuteActions(LogCaptureTestCase):
 		self.__actions.stop()
 		self.__actions.join()
 		self.assertLogged("stdout: %r" % 'ip flush', "stdout: %r" % 'ip stop')
-		self.assertEqual(self.__actions.status(),[("Currently banned", 0 ),
-               ("Total banned", 0 ), ("Banned IP list", [] )])
-		self.assertEqual(self.__actions.status('short'),[("Currently banned", 0 ),
-               ("Total banned", 0 )])
+        self.assertEqual(
+            self.__actions.status(),
+			[("Currently banned", 0),
+             ("Total banned", 0 ),
+             ("Banned IP list", [] )])
+		self.assertEqual(
+			self.__actions.status('short'),
+			[("Currently banned", 0 ),
+			 ("Total banned", 0 )])
 
 	def testAddActionPython(self):
 		self.__actions.add(

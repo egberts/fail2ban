@@ -39,8 +39,8 @@ class JailsReader(ConfigReader):
 		Parameters
 		----------
 		force_enable : bool, optional
-		  Passed to JailReader to force enable the jails.
-		  It is for internal use
+			Passed to JailReader to force enable the jails.
+			It is for internal use
 		"""
 		ConfigReader.__init__(self, **kwargs)
 		self.__jails = list()
@@ -63,7 +63,7 @@ class JailsReader(ConfigReader):
 		if section is None:
 			sections = self.sections()
 		else:
-			sections = [ section ]
+			sections = [section]
 
 		# Get the options of all jails.
 		parse_status = 0
@@ -73,7 +73,7 @@ class JailsReader(ConfigReader):
 			# use the cfg_share for filter/action caching and the same config for all 
 			# jails (use_config=...), therefore don't read it here:
 			jail = JailReader(sec, force_enable=self.__force_enable, 
-				share_config=self.share_config, use_config=self._cfg)
+								share_config=self.share_config, use_config=self._cfg)
 			ret = jail.getOptions()
 			if ret:
 				if jail.isEnabled():
@@ -86,7 +86,7 @@ class JailsReader(ConfigReader):
 				self.__jails.append(jail)
 				# at least one jail was invalid:
 				parse_status |= 2
-		return ((ignoreWrong and parse_status & 1) or not (parse_status & 2))
+		return (ignoreWrong and parse_status & 1) or not (parse_status & 2)
 
 	def convert(self, allow_no_files=False):
 		"""Convert read before __opts and jails to the commands stream
@@ -94,8 +94,8 @@ class JailsReader(ConfigReader):
 		Parameters
 		----------
 		allow_missing : bool
-		  Either to allow log files to be missing entirely.  Primarily is
-		  used for testing
+			Either to allow log files to be missing entirely.  Primarily is
+			used for testing
 		"""
 
 		stream = list()
@@ -108,4 +108,3 @@ class JailsReader(ConfigReader):
 				stream.append(["start", jail.getName()])
 
 		return stream
-

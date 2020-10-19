@@ -28,22 +28,24 @@ __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier"
 __license__ = "GPL"
 
-#from cPickle import dumps, loads, HIGHEST_PROTOCOL
+# from cPickle import dumps, loads, HIGHEST_PROTOCOL
 from pickle import dumps, loads, HIGHEST_PROTOCOL
 from ..protocol import CSPROTO
 import socket
-import sys
+
 
 class CSocket(object):
-	
+	"""
+	CSocket
+	"""
 	def __init__(self, sock="/var/run/fail2ban/fail2ban.sock", timeout=-1):
 		# Create an INET, STREAMing socket
-		#self.csock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# self.csock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.__csock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		self.__deftout = self.__csock.gettimeout()
 		if timeout != -1:
 			self.settimeout(timeout)
-		#self.csock.connect(("localhost", 2222))
+		# self.csock.connect(("localhost", 2222))
 		self.__csock.connect(sock)
 
 	def __del__(self):
@@ -65,11 +67,11 @@ class CSocket(object):
 		try:
 			self.__csock.sendall(CSPROTO.CLOSE + CSPROTO.END)
 			self.__csock.shutdown(socket.SHUT_RDWR)
-		except socket.error: # pragma: no cover - normally unreachable
+		except socket.error:  # pragma: no cover - normally unreachable
 			pass
 		try:
 			self.__csock.close()
-		except socket.error: # pragma: no cover - normally unreachable
+		except socket.error:  # pragma: no cover - normally unreachable
 			pass
 		self.__csock = None
 	
@@ -78,20 +80,24 @@ class CSocket(object):
 		"""Convert every "unexpected" member of message to string"""
 		if isinstance(m, (basestring, bool, int, float, list, dict, set)):
 			return m
-		else: # pragma: no cover
+		else:  # pragma: no cover
 			return str(m)
 
 	@staticmethod
 	def receive(sock, nonblocking=False, timeout=None):
 		msg = CSPROTO.EMPTY
-		if nonblocking: sock.setblocking(0)
-		if timeout: sock.settimeout(timeout)
+		if nonblocking:
+			sock.setblocking(0)
+		if timeout:
+			sock.settimeout(timeout)
 		bufsize = 1024
 		while msg.rfind(CSPROTO.END, -32) == -1:
 			chunk = sock.recv(bufsize)
 			if not len(chunk):
 				raise socket.error(104, 'Connection reset by peer')
-			if chunk == CSPROTO.END: break
+			if chunk == CSPROTO.END:
+				break
 			msg = msg + chunk
-			if bufsize < 32768: bufsize <<= 1
+			if bufsize < 32768:
+				bufsize <<= 1
 		return loads(msg)

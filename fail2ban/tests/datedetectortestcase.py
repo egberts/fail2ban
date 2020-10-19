@@ -115,7 +115,7 @@ class DateDetectorTest(LogCaptureTestCase):
                 log = "auth-error | %s | invalid password" % dateLong
                 datelog = self.datedetector.getTime(log)
                 self.assertTrue(datelog, "Parse epoch time failed: %r" % (log,))
-                ( datelog, matchlog ) = datelog
+                (datelog, matchlog) = datelog
                 self.assertEqual(int(datelog), dateUnix)
                 self.assertEqual(matchlog.group(1), str(dateLong))
         # wrong epoch time format (does not match pattern):
@@ -131,7 +131,7 @@ class DateDetectorTest(LogCaptureTestCase):
         #      is not correctly determined atm, since year is not present
         #      in the log entry.  Since this doesn't effect the operation
         #      of fail2ban -- we just ignore incorrect day of the week
-        ( datelog, matchlog ) = self.datedetector.getTime(log)
+        (datelog, matchlog) = self.datedetector.getTime(log)
         self.assertEqual(datelog, dateUnix)
         self.assertEqual(matchlog.group(1), 'Jan 23 21:59:59')
 
@@ -145,11 +145,11 @@ class DateDetectorTest(LogCaptureTestCase):
         dtUTC = dt(2017, 1, 23, 15, 0)
         for tz, log, desired in (
             # no TZ in input-string:
-            ('UTC+0300', logdt, dt(2017, 1, 23, 12, 0)), # so in UTC, it was noon
-            ('UTC',      logdt, dtUTC), # UTC
+            ('UTC+0300', logdt, dt(2017, 1, 23, 12, 0)),  # so in UTC, it was noon
+            ('UTC',      logdt, dtUTC),  # UTC
             ('UTC-0430', logdt, dt(2017, 1, 23, 19, 30)),
             ('GMT+12',   logdt, dt(2017, 1, 23, 3, 0)),
-            (None,       logdt, dt(2017, 1, 23, 14, 0)), # default CET in our test-framework
+            (None,       logdt, dt(2017, 1, 23, 14, 0)),  # default CET in our test-framework
             # CET:
             ('CET',      logdt, dt(2017, 1, 23, 14, 0)),
             ('+0100',    logdt, dt(2017, 1, 23, 14, 0)),
@@ -162,24 +162,27 @@ class DateDetectorTest(LogCaptureTestCase):
             # check offset in minutes:
             ('CET+0130', logdt, dt(2017, 1, 23, 12, 30)),
             # TZ in input-string have precedence:
-            ('UTC+0300', logdt+' GMT', dtUTC), # GMT wins
-            ('UTC',      logdt+' GMT', dtUTC), # GMT wins
-            ('UTC-0430', logdt+' GMT', dtUTC), # GMT wins
-            (None,       logdt+' GMT', dtUTC), # GMT wins
-            ('UTC',      logdt+' -1045', dt(2017, 1, 24, 1, 45)), # -1045 wins
-            (None,       logdt+' -10:45', dt(2017, 1, 24, 1, 45)), # -1045 wins
-            ('UTC',      logdt+' +0945', dt(2017, 1, 23, 5, 15)), # +0945 wins
-            (None,       logdt+' +09:45', dt(2017, 1, 23, 5, 15)), # +0945 wins
-            ('UTC+0300', logdt+' Z', dtUTC), # Z wins (UTC)
-            ('GMT+12',   logdt+' CET',  dt(2017, 1, 23, 14, 0)), # CET wins
-            ('GMT+12',   logdt+' CEST', dt(2017, 1, 23, 13, 0)), # CEST wins
-            ('GMT+12',   logdt+' CET+0130', dt(2017, 1, 23, 12, 30)), # CET+0130 wins
+            ('UTC+0300', logdt+' GMT', dtUTC),  # GMT wins
+            ('UTC',      logdt+' GMT', dtUTC),  # GMT wins
+            ('UTC-0430', logdt+' GMT', dtUTC),  # GMT wins
+            (None,       logdt+' GMT', dtUTC),  # GMT wins
+            ('UTC',      logdt+' -1045', dt(2017, 1, 24, 1, 45)),  # -1045 wins
+            (None,       logdt+' -10:45', dt(2017, 1, 24, 1, 45)),  # -1045 wins
+            ('UTC',      logdt+' +0945', dt(2017, 1, 23, 5, 15)),  # +0945 wins
+            (None,       logdt+' +09:45', dt(2017, 1, 23, 5, 15)),  # +0945 wins
+            ('UTC+0300', logdt+' Z', dtUTC),  # Z wins (UTC)
+            ('GMT+12',   logdt+' CET',  dt(2017, 1, 23, 14, 0)),  # CET wins
+            ('GMT+12',   logdt+' CEST', dt(2017, 1, 23, 13, 0)),  # CEST wins
+            ('GMT+12',   logdt+' CET+0130', dt(2017, 1, 23, 12, 30)),  # CET+0130 wins
         ):
             logSys.debug('== test %r with TZ %r', log, tz)
-            dd.default_tz=tz; datelog, _ = dd.getTime(log)
+            dd.default_tz = tz
+            datelog, _ = dd.getTime(log)
             val = dt.utcfromtimestamp(datelog)
-            self.assertEqual(val, desired,
-                     "wrong offset %r != %r by %r with default TZ %r (%r)" % (val, desired, log, tz, dd.default_tz))
+            self.assertEqual(
+                val, desired,
+                "wrong offset %r != %r by %r with default TZ %r (%r)"
+                % (val, desired, log, tz, dd.default_tz))
 
         self.assertRaises(ValueError, setattr, dd, 'default_tz', 'WRONG-TZ')
         dd.default_tz = None
@@ -211,25 +214,26 @@ class DateDetectorTest(LogCaptureTestCase):
             (False, True,  "23-Jan-2005 21:59:59.02", None),
             (False, True,  "23-Jan-2005 21:59:59 +0100", None),
             (False, True,  "23-01-2005 21:59:59", None),
-            (True,  True,  "1106513999", None), # Portsetry
-            (False, True,  "01-23-2005 21:59:59.252", None), # reported on f2b, causes Feb29 fix to break
-            (False, False, "@4000000041f4104f00000000", None), # TAI64N
-            (False, True,  "2005-01-23T20:59:59.252Z", None), #ISO 8601 (UTC)
-            (False, True,  "2005-01-23T15:59:59-05:00", None), #ISO 8601 with TZ
-            (False, True,  "2005-01-23 21:59:59", None), #ISO 8601 no TZ, assume local
-            (False, True,  "20050123T215959", None),   #Short ISO with T
-            (False, True,  "20050123 215959", None),   #Short ISO with space
+            (True,  True,  "1106513999", None),  # Portsetry
+            (False, True,  "01-23-2005 21:59:59.252", None),  # reported on f2b, causes Feb29 fix to break
+            (False, False, "@4000000041f4104f00000000", None),  # TAI64N
+            (False, True,  "2005-01-23T20:59:59.252Z", None),  # ISO 8601 (UTC)
+            (False, True,  "2005-01-23T15:59:59-05:00", None),  # ISO 8601 with TZ
+            (False, True,  "2005-01-23 21:59:59", None),  # ISO 8601 no TZ, assume local
+            (False, True,  "20050123T215959", None),   # Short ISO with T
+            (False, True,  "20050123 215959", None),   # Short ISO with space
             (True,  True,  "<01/23/05@21:59:59>", None),
-            (False, True,  "050123 21:59:59", None), # MySQL
-            (True,  True,  "Jan-23-05 21:59:59", None), # ASSP like
-            (False, True,  "Jan 23, 2005 9:59:59 PM", None), # Apache Tomcat
-            (True,  True,  "1106513999", None), # Regular epoch
-            (True,  True,  "1106513999.000", None), # Regular epoch with millisec
-            (True,  True,  "[1106513999.000]", "1106513999.000"), # epoch squared (brackets are not in match)
-            (False, True,  "audit(1106513999.000:987)", "1106513999.000"), # SELinux
-            (True,  True,  "no date line", None), # no date in string
+            (False, True,  "050123 21:59:59", None),  # MySQL
+            (True,  True,  "Jan-23-05 21:59:59", None),  # ASSP like
+            (False, True,  "Jan 23, 2005 9:59:59 PM", None),  # Apache Tomcat
+            (True,  True,  "1106513999", None),  # Regular epoch
+            (True,  True,  "1106513999.000", None),  # Regular epoch with millisec
+            (True,  True,  "[1106513999.000]", "1106513999.000"),  # epoch squared (brackets are not in match)
+            (False, True,  "audit(1106513999.000:987)", "1106513999.000"),  # SELinux
+            (True,  True,  "no date line", None),  # no date in string
         ):
-            if rdate is None and sdate != "no date line": rdate = sdate
+            if rdate is None and sdate != "no date line":
+                rdate = sdate
             logSys.debug('== test %r', (anchored, bound, sdate, rdate))
             for should_match, prefix in (
                 (rdate is not None, ""),
@@ -238,34 +242,47 @@ class DateDetectorTest(LogCaptureTestCase):
             ):
                 log = prefix + sdate + "[sshd] error: PAM: Authentication failure"
                 # if not allowed boundary test:
-                if not bound and prefix == "word-boundary": continue
+                if not bound and prefix == "word-boundary":
+                    continue
                 logSys.debug('  -- test %-5s for %r', should_match, log)
                 # with getTime:
                 logtime = self.datedetector.getTime(log)
                 if should_match:
-                    self.assertNotEqual(logtime, None,
-                        "getTime retrieved nothing: failure for %s by prefix %r, anchored: %r, log: %s" % ( sdate, prefix, anchored, log))
-                    ( logUnix, logMatch ) = logtime
-                    self.assertEqual(logUnix, dateUnix,
-                        "getTime comparison failure for %s: by prefix %r \"%s\" is not \"%s\"" % (sdate, prefix, logUnix, dateUnix))
+                    self.assertNotEqual(
+                        logtime, None,
+                        "getTime retrieved nothing: failure for %s by prefix %r, anchored: %r, log: %s"
+                        % (sdate, prefix, anchored, log))
+                    (logUnix, logMatch) = logtime
+                    self.assertEqual(
+                        logUnix, dateUnix,
+                        "getTime comparison failure for %s: by prefix %r \"%s\" is not \"%s\""
+                        % (sdate, prefix, logUnix, dateUnix))
                     self.assertEqual(logMatch.group(1), rdate)
                 else:
-                    self.assertEqual(logtime, None,
-                        "getTime should have not matched for %r by prefix %r Got: %s" % (sdate, prefix, logtime))
+                    self.assertEqual(
+                        logtime, None,
+                        "getTime should have not matched for %r by prefix %r Got: %s"
+                        % (sdate, prefix, logtime))
                 # with getTime(matchTime) - this combination used in filter:
                 (timeMatch, template) = matchTime = self.datedetector.matchTime(log)
                 logtime = self.datedetector.getTime(log, matchTime)
                 logSys.debug('  -- found - %r', template.name if timeMatch else False)
                 if should_match:
-                    self.assertNotEqual(logtime, None,
-                        "getTime retrieved nothing: failure for %s by prefix %r, anchored: %r, log: %s" % ( sdate, prefix, anchored, log))
-                    ( logUnix, logMatch ) = logtime
-                    self.assertEqual(logUnix, dateUnix,
-                        "getTime comparison failure for %s by prefix %r: \"%s\" is not \"%s\"" % (sdate, prefix, logUnix, dateUnix))
+                    self.assertNotEqual(
+                        logtime, None,
+                        "getTime retrieved nothing: failure for %s by prefix %r, anchored: %r, log: %s"
+                        % (sdate, prefix, anchored, log))
+                    (logUnix, logMatch) = logtime
+                    self.assertEqual(
+                        logUnix, dateUnix,
+                        "getTime comparison failure for %s by prefix %r: \"%s\" is not \"%s\""
+                        % (sdate, prefix, logUnix, dateUnix))
                     self.assertEqual(logMatch.group(1), rdate)
                 else:
-                    self.assertEqual(logtime, None,
-                        "getTime should have not matched for %r by prefix %r Got: %s" % (sdate, prefix, logtime))
+                    self.assertEqual(
+                        logtime, None,
+                        "getTime should have not matched for %r by prefix %r Got: %s"
+                        % (sdate, prefix, logtime))
                 logSys.debug('  -- OK')
 
     def testAllUniqueTemplateNames(self):
@@ -279,16 +296,16 @@ class DateDetectorTest(LogCaptureTestCase):
         mu = time.mktime(datetime.datetime(2012, 10, 11, 2, 37, 17).timetuple())
         logdate = self.datedetector.getTime('2012/10/11 02:37:17 [error] 18434#0')
         self.assertNotEqual(logdate, None)
-        ( logTime, logMatch ) = logdate
+        (logTime, logMatch) = logdate
         self.assertEqual(logTime, mu)
         self.assertEqual(logMatch.group(1), '2012/10/11 02:37:17')
         # confuse it with year being at the end
         for i in range(10):
-            ( logTime, logMatch ) = self.datedetector.getTime('11/10/2012 02:37:17 [error] 18434#0')
+            (logTime, logMatch) = self.datedetector.getTime('11/10/2012 02:37:17 [error] 18434#0')
             self.assertEqual(logTime, mu)
             self.assertEqual(logMatch.group(1), '11/10/2012 02:37:17')
         # and now back to the original
-        ( logTime, logMatch ) = self.datedetector.getTime('2012/10/11 02:37:17 [error] 18434#0')
+        (logTime, logMatch) = self.datedetector.getTime('2012/10/11 02:37:17 [error] 18434#0')
         self.assertEqual(logTime, mu)
         self.assertEqual(logMatch.group(1), '2012/10/11 02:37:17')
 
@@ -299,7 +316,7 @@ class DateDetectorTest(LogCaptureTestCase):
         self.assertRaises(Exception, t.getDate, '')
         self.assertEqual(t.matchDate('aaaac').group(1), 'aaaac')
 
-        ## no word boundaries left and right:
+        # no word boundaries left and right:
         t = DatePatternRegex()
         t.pattern = '(?iu)**time:%ExY%Exm%ExdT%ExH%ExM%ExS**'
         # ** was removed from end-regex:
@@ -312,7 +329,7 @@ class DateDetectorTest(LogCaptureTestCase):
         dt = 'TIME:50050102T010203'
         self.assertFalse(t.matchDate(dt))
 
-        ## start boundary left and word boundary right (automatically if not **):
+        # start boundary left and word boundary right (automatically if not **):
         t = DatePatternRegex()
         t.pattern = '{^LN-BEG}time:%ExY%Exm%ExdT%ExH%ExM%ExS'
         self.assertTrue('^' in t.regex)
@@ -326,13 +343,16 @@ class DateDetectorTest(LogCaptureTestCase):
         dt = 'TIME:20050102T010203'
         self.assertFalse(t.matchDate(dt))
 
-        ## auto-switching "ignore case" and "unicode"
+        # auto-switching "ignore case" and "unicode"
         t = DatePatternRegex()
         t.pattern = '^%Y %b %d'
         self.assertTrue('(?iu)' in t.regex)
-        dt = '2005 jun 03'; self.assertEqual(t.matchDate(dt).group(1), dt)
-        dt = '2005 Jun 03'; self.assertEqual(t.matchDate(dt).group(1), dt)
-        dt = '2005 JUN 03'; self.assertEqual(t.matchDate(dt).group(1), dt)
+        dt = '2005 jun 03'
+        self.assertEqual(t.matchDate(dt).group(1), dt)
+        dt = '2005 Jun 03'
+        self.assertEqual(t.matchDate(dt).group(1), dt)
+        dt = '2005 JUN 03'
+        self.assertEqual(t.matchDate(dt).group(1), dt)
 
     def testNotAnchoredCollision(self):
         # try for patterns with and without word boundaries:
@@ -364,12 +384,14 @@ class DateDetectorTest(LogCaptureTestCase):
             ("2003-03-07 17:05:01",        "some free text 2003-03-07 17:05:01 test ...", 15),
             # distance collision detection (date from foreign input should not be found):
             ("030324  0:04:00",            "server mysqld[1000]: 030324  0:04:00 [Warning] Access denied ..."
-                                                                                " foreign-input just some free text 2003-03-07 17:05:01 test", 10),
+                                           " foreign-input just some free text 2003-03-07 17:05:01 test", 10),
             # distance collision detection (first date should be found):
-            ("Sep 16 21:30:26",            "server mysqld[1020]: Sep 16 21:30:26 server mysqld: 030916 21:30:26 [Warning] Access denied", 15),
+            ("Sep 16 21:30:26",            "server mysqld[1020]: Sep 16 21:30:26 server mysqld: "
+                                           "030916 21:30:26 [Warning] Access denied", 15),
             # just to test sorting:
             ("2005-10-07 06:09:42",        "server mysqld[5906]: 2005-10-07 06:09:42 5907 [Warning] Access denied", 20),
-            ("2005-10-08T15:26:18.237955", "server mysqld[5906]: 2005-10-08T15:26:18.237955 6 [Note] Access denied", 20),
+            ("2005-10-08T15:26:18.237955", "server mysqld[5906]: 2005-10-08T15:26:18.237955 6 [Note] "
+                                           "Access denied", 20),
             # date format changed again:
             ("051009 10:05:30",            "server mysqld[1000]: 051009 10:05:30 [Warning] Access denied ...", 50),
         ):
@@ -478,9 +500,12 @@ class CustomDateFormatsTest(unittest.TestCase):
             ('[20:00:00 01.02.2003]',  r'\[%H:%M:%S %d.%m.%Y\]', '[20:00:00 01.02.2003]192.0.2.1'),
             ('[20:00:00 01.02.2003]',  r'\[%H:%M:%S %d.%m.%Y\]$', '192.0.2.1[20:00:00 01.02.2003]'),
             ('[20:00:00 01.02.2003]',  r'^\[%H:%M:%S %d.%m.%Y\]', '[20:00:00 01.02.2003]192.0.2.1'),
-            ('[17/Jun/2011 17:00:45]', r'^\[%d/%b/%Y %H:%M:%S\]', '[17/Jun/2011 17:00:45] Attempt, IP address 192.0.2.1'),
-            ('[17/Jun/2011 17:00:45]', r'\[%d/%b/%Y %H:%M:%S\]', 'Attempt [17/Jun/2011 17:00:45] IP address 192.0.2.1'),
-            ('[17/Jun/2011 17:00:45]', r'\[%d/%b/%Y %H:%M:%S\]', 'Attempt IP address 192.0.2.1, date: [17/Jun/2011 17:00:45]'),
+            ('[17/Jun/2011 17:00:45]', r'^\[%d/%b/%Y %H:%M:%S\]',
+             '[17/Jun/2011 17:00:45] Attempt, IP address 192.0.2.1'),
+            ('[17/Jun/2011 17:00:45]', r'\[%d/%b/%Y %H:%M:%S\]',
+             'Attempt [17/Jun/2011 17:00:45] IP address 192.0.2.1'),
+            ('[17/Jun/2011 17:00:45]', r'\[%d/%b/%Y %H:%M:%S\]',
+             'Attempt IP address 192.0.2.1, date: [17/Jun/2011 17:00:45]'),
             # direct specified patterns (begin/end, missed):
             (False,                 r'%H:%M:%S %d.%m.%Y', '192.0.2.1x20:00:00 01.02.2003'),
             (False,                 r'%H:%M:%S %d.%m.%Y', '20:00:00 01.02.2003x192.0.2.1'),
@@ -518,8 +543,10 @@ class CustomDateFormatsTest(unittest.TestCase):
             # UTC/GMT time zone offset (with %z and %Z):
             (1072746123.0 - 3600, "{^LN-BEG}%ExY-%Exm-%Exd %ExH:%ExM:%ExS(?: %z)?", "[2003-12-30 01:02:03] server ..."),
             (1072746123.0 - 3600, "{^LN-BEG}%ExY-%Exm-%Exd %ExH:%ExM:%ExS(?: %Z)?", "[2003-12-30 01:02:03] server ..."),
-            (1072746123.0,        "{^LN-BEG}%ExY-%Exm-%Exd %ExH:%ExM:%ExS(?: %z)?", "[2003-12-30 01:02:03 UTC] server ..."),
-            (1072746123.0,        "{^LN-BEG}%ExY-%Exm-%Exd %ExH:%ExM:%ExS(?: %Z)?", "[2003-12-30 01:02:03 UTC] server ..."),
+            (1072746123.0,        "{^LN-BEG}%ExY-%Exm-%Exd %ExH:%ExM:%ExS(?: %z)?",
+             "[2003-12-30 01:02:03 UTC] server ..."),
+            (1072746123.0,        "{^LN-BEG}%ExY-%Exm-%Exd %ExH:%ExM:%ExS(?: %Z)?",
+             "[2003-12-30 01:02:03 UTC] server ..."),
         ):
             logSys.debug('== test: %r', (matched, dp, line))
             if dp is None:
@@ -562,11 +589,11 @@ class CustomDateFormatsTest(unittest.TestCase):
             date = dd.getTime(line)
             if matched:
                 self.assertTrue(date)
-                if isinstance(matched, basestring): # pragma: no cover
+                if isinstance(matched, basestring):  # pragma: no cover
                     self.assertEqual(matched, date[1].group(1))
                 else:
                     self.assertEqual(matched, date[0])
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 self.assertEqual(date, None)
 
 #   def testDefaultTempate(self):
@@ -579,4 +606,3 @@ class CustomDateFormatsTest(unittest.TestCase):
 #
 #       self.assertEqual(self.__datedetector.getTime(log), date)
 #       self.assertEqual(self.__datedetector.getUnixTime(log), dateUnix)
-

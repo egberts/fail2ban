@@ -53,7 +53,7 @@ from .. import version
 
 try:
     from ..server import filtersystemd
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     filtersystemd = None
 
 TEST_FILES_DIR = os.path.join(os.path.dirname(__file__), "files")
@@ -77,7 +77,7 @@ class TransmitterBase(LogCaptureTestCase):
         super(TransmitterBase, self).setUp()
         self.transm = self.server._Server__transm
         # To test thransmitter we don't need to start server...
-        #self.server.start('/dev/null', '/dev/null', force=False)
+        # self.server.start('/dev/null', '/dev/null', force=False)
         self.jailName = "TestJail1"
         self.server.addJail(self.jailName, FAST_BACKEND)
 
@@ -154,7 +154,7 @@ class TransmitterBase(LogCaptureTestCase):
                 (0, outValues[:n+1]))
         for n, value in enumerate(inValues):
             self.assertEqual(
-                self.transm.proceed(["set", jail, cmdDel, 0]), # First item
+                self.transm.proceed(["set", jail, cmdDel, 0]),  # First item
                 (0, outValues[n+1:]))
             self.assertEqual(
                 self.transm.proceed(["get", jail, cmd]),
@@ -189,13 +189,13 @@ class Transmitter(TransmitterBase):
             # Approx 0.1 second delay but not faster
             dt = t1 - t0
             self.assertTrue(0.09 < dt < 0.2, msg="Sleep was %g sec" % dt)
-        else: # pragma: no cover
+        else:  # pragma: no cover
             self.assertEqual(self.transm.proceed(["sleep", "0.0001"]), (0, None))
 
     def testDatabase(self):
         if not unittest.F2B.memory_db:
             tmp, tmpFilename = tempfile.mkstemp(".db", "fail2ban_")
-        else: # pragma: no cover
+        else:  # pragma: no cover
             tmpFilename = ':memory:'
         # Jails present, can't change database
         self.setGetTestNOK("dbfile", tmpFilename)
@@ -262,10 +262,18 @@ class Transmitter(TransmitterBase):
         self.assertEqual(
             self.transm.proceed(["start", self.jailName]), (0, None))
         time.sleep(Utils.DEFAULT_SLEEP_TIME)
-        # wait until not started (3 seconds as long as any RuntimeError, ex.: RuntimeError('cannot join thread before it is started',)):
-        self.assertTrue( Utils.wait_for(
-            lambda: self.server.isAlive(1) and not isinstance(self.transm.proceed(["status", self.jailName]), RuntimeError),
-            3) )
+        # wait until not started (3 seconds as long as any RuntimeError,
+        # ex.: RuntimeError('cannot join thread before it is started',)):
+        self.assertTrue(
+            Utils.wait_for(lambda: self.server.isAlive(
+                1
+            ) and not isinstance(
+                self.transm.proceed(["status", self.jailName]),
+                RuntimeError
+            ),
+                            3
+                           )
+        )
         self.assertEqual(
             self.transm.proceed(["stop", self.jailName]), (0, None))
         self.assertNotIn(self.jailName, self.server._Server__jails)
@@ -280,11 +288,20 @@ class Transmitter(TransmitterBase):
         #      race condition and missing locking somewhere, but for now
         #      giving it a small delay reliably helps to proceed with tests
         time.sleep(Utils.DEFAULT_SLEEP_TIME)
-        self.assertTrue( Utils.wait_for(
-            lambda: self.server.isAlive(2) and not isinstance(self.transm.proceed(["status", self.jailName]), RuntimeError),
-            3) )
+        self.assertTrue(
+            Utils.wait_for(
+                lambda: self.server.isAlive(2) and not isinstance(
+                    self.transm.proceed(["status", self.jailName]),
+                    RuntimeError
+                ),
+                3
+            )
+        )
         self.assertEqual(self.transm.proceed(["stop", "--all"]), (0, None))
-        self.assertTrue( Utils.wait_for( lambda: not len(self.server._Server__jails), 3) )
+        self.assertTrue(
+            Utils.wait_for(
+                lambda: not len(self.server._Server__jails), 3)
+        )
         self.assertNotIn(self.jailName, self.server._Server__jails)
         self.assertNotIn("TestJail2", self.server._Server__jails)
 
@@ -314,7 +331,9 @@ class Transmitter(TransmitterBase):
         self.setGetTestNOK("bantime", "Cat", jail=self.jailName)
 
     def testDatePattern(self):
-        self.setGetTest("datepattern", "%%%Y%m%d%H%M%S",
+        self.setGetTest(
+            "datepattern",
+            "%%%Y%m%d%H%M%S",
             ("%%%Y%m%d%H%M%S", "%YearMonthDay24hourMinuteSecond"),
             jail=self.jailName)
         self.setGetTest(
@@ -341,36 +360,60 @@ class Transmitter(TransmitterBase):
             (0, "no"))
 
     def testJailBanIP(self):
-        self.server.startJail(self.jailName) # Jail must be started
+        self.server.startJail(self.jailName)  # Jail must be started
 
         self.assertEqual(
             self.transm.proceed(["set", self.jailName, "banip", "192.0.2.1", "192.0.2.1", "192.0.2.2"]),
             (0, 2))
-        self.assertLogged("Ban 192.0.2.1", "Ban 192.0.2.2", all=True, wait=True) # Give chance to ban
+        self.assertLogged("Ban 192.0.2.1", "Ban 192.0.2.2", all=True, wait=True)  # Give chance to ban
         self.assertEqual(
-            self.transm.proceed(["set", self.jailName, "banip", "Badger"]),
-            (0, 1)) #NOTE: Is IP address validated? Is DNS Lookup done?
-        self.assertLogged("Ban Badger", wait=True) # Give chance to ban
+            self.transm.proceed(
+                ["set", self.jailName, "banip", "Badger"]
+            ),
+            (0, 1)
+        )  # NOTE: Is IP address validated? Is DNS Lookup done?
+        self.assertLogged("Ban Badger", wait=True)  # Give chance to ban
         # Unban IP (first/last are not banned, so checking unban of both other succeeds):
         self.assertEqual(
             self.transm.proceed(
-                ["set", self.jailName, "unbanip", "192.0.2.255", "192.0.2.1", "192.0.2.2", "192.0.2.254"]),
+                [
+                    "set",
+                    self.jailName,
+                    "unbanip",
+                    "192.0.2.255",
+                    "192.0.2.1",
+                    "192.0.2.2",
+                    "192.0.2.254"
+                ]
+            ),
             (0, 2))
         self.assertLogged("Unban 192.0.2.1", "Unban 192.0.2.2", all=True, wait=True)
-        self.assertLogged("192.0.2.255 is not banned", "192.0.2.254 is not banned", all=True, wait=True)
+        self.assertLogged(
+            "192.0.2.255 is not banned",
+            "192.0.2.254 is not banned",
+            all=True, wait=True)
         self.pruneLog()
         # Unban IP which isn't banned (error):
         self.assertEqual(
             self.transm.proceed(
-                ["set", self.jailName, "unbanip", "--report-absent", "192.0.2.255"])[0],1)
+                ["set", self.jailName, "unbanip", "--report-absent", "192.0.2.255"]
+            )[0],
+            1
+        )
         # ... (no error, IPs logged only):
         self.assertEqual(
             self.transm.proceed(
-                ["set", self.jailName, "unbanip", "192.0.2.255", "192.0.2.254"]),(0, 0))
-        self.assertLogged("192.0.2.255 is not banned", "192.0.2.254 is not banned", all=True, wait=True)
+                ["set", self.jailName, "unbanip", "192.0.2.255", "192.0.2.254"]
+            ),
+            (0, 0)
+        )
+        self.assertLogged(
+            "192.0.2.255 is not banned",
+            "192.0.2.254 is not banned",
+            all=True, wait=True)
 
     def testJailAttemptIP(self):
-        self.server.startJail(self.jailName) # Jail must be started
+        self.server.startJail(self.jailName)  # Jail must be started
 
         def attempt(ip, matches):
             return self.transm.proceed(["set", self.jailName, "attempt", ip] + matches)
@@ -382,7 +425,10 @@ class Transmitter(TransmitterBase):
                 self.assertEqual(attempt(ip, ["test failure %d" % i]), (0, 1))
         self.assertLogged("192.0.2.1:2", "192.0.2.2:2", all=True, wait=True)
         # this 3 attempts at once should cause a ban:
-        self.assertEqual(attempt(ip, ["test failure %d" % i for i in (3,4,5)]), (0, 1))
+        self.assertEqual(
+            attempt(ip, ["test failure %d" % i for i in (3, 4, 5)]),
+            (0, 1)
+        )
         self.assertLogged("192.0.2.2:5", wait=True)
         # resulted to ban for "192.0.2.2" but not for "192.0.2.1":
         self.assertLogged("Ban 192.0.2.2", wait=True)
@@ -402,34 +448,41 @@ class Transmitter(TransmitterBase):
                 self.assertEqual(
                     self.transm.proceed(["set", jail, "banip", banip]),
                     (0, 1))
-                self.assertLogged("Ban %s" % banip, wait=True) # Give chance to ban
+                self.assertLogged("Ban %s" % banip, wait=True)  # Give chance to ban
             # Unban IP address
             if unbanip is not None:
                 self.assertEqual(
                     self.transm.proceed(["set", jail, "unbanip", unbanip]),
                     (0, 1))
-                self.assertLogged("Unban %s" % unbanip, wait=True) # Give chance to unban
+                self.assertLogged("Unban %s" % unbanip, wait=True)  # Give chance to unban
             # Compare the list of banned IP addresses with outList
             self.assertSortedEqual(
                 self.transm.proceed(["get", jail, "banip"]+list(args)),
                 (0, outList), nestedOnly=False)
             MyTime.setTime(MyTime.time() + 1)
 
-        _getBanListTest(jail,
+        _getBanListTest(
+            jail,
             outList=[])
-        _getBanListTest(jail, banip="127.0.0.1", args=('--with-time',),
+        _getBanListTest(
+            jail, banip="127.0.0.1", args=('--with-time',),
             outList=["127.0.0.1 \t2005-08-14 12:00:01 + 600 = 2005-08-14 12:10:01"])
-        _getBanListTest(jail, banip="192.168.0.1", args=('--with-time',),
+        _getBanListTest(
+            jail, banip="192.168.0.1", args=('--with-time',),
             outList=[
                 "127.0.0.1 \t2005-08-14 12:00:01 + 600 = 2005-08-14 12:10:01",
                 "192.168.0.1 \t2005-08-14 12:00:02 + 600 = 2005-08-14 12:10:02"])
-        _getBanListTest(jail, banip="192.168.1.10",
+        _getBanListTest(
+            jail, banip="192.168.1.10",
             outList=["127.0.0.1", "192.168.0.1", "192.168.1.10"])
-        _getBanListTest(jail, unbanip="127.0.0.1",
+        _getBanListTest(
+            jail, unbanip="127.0.0.1",
             outList=["192.168.0.1", "192.168.1.10"])
-        _getBanListTest(jail, unbanip="192.168.1.10",
+        _getBanListTest(
+            jail, unbanip="192.168.1.10",
             outList=["192.168.0.1"])
-        _getBanListTest(jail, unbanip="192.168.0.1",
+        _getBanListTest(
+            jail, unbanip="192.168.0.1",
             outList=[])
 
     def testJailMaxMatches(self):
@@ -453,7 +506,8 @@ class Transmitter(TransmitterBase):
     def testJailLogEncoding(self):
         self.setGetTest("logencoding", "UTF-8", jail=self.jailName)
         self.setGetTest("logencoding", "ascii", jail=self.jailName)
-        self.setGetTest("logencoding", "auto", PREFER_ENC,
+        self.setGetTest(
+            "logencoding", "auto", PREFER_ENC,
             jail=self.jailName)
         self.setGetTestNOK("logencoding", "Monkey", jail=self.jailName)
 
@@ -557,7 +611,8 @@ class Transmitter(TransmitterBase):
         self.setGetTest("ignorecommand", "bin/ignore-command <ip>", jail=self.jailName)
 
     def testJailIgnoreCache(self):
-        self.setGetTest("ignorecache",
+        self.setGetTest(
+            "ignorecache",
             'key="<ip>",max-time=1d,max-count=9999',
             ["<ip>", 9999, 24*60*60],
             jail=self.jailName)
@@ -567,7 +622,8 @@ class Transmitter(TransmitterBase):
         self.setGetTest("prefregex", "^Test", jail=self.jailName)
 
     def testJailRegex(self):
-        self.jailAddDelRegexTest("failregex",
+        self.jailAddDelRegexTest(
+            "failregex",
             [
                 "user john at <HOST>",
                 "Admin user login from <HOST>",
@@ -591,7 +647,8 @@ class Transmitter(TransmitterBase):
             1)
 
     def testJailIgnoreRegex(self):
-        self.jailAddDelRegexTest("ignoreregex",
+        self.jailAddDelRegexTest(
+            "ignoreregex",
             [
                 "user john",
                 "Admin user login from <HOST>",
@@ -616,62 +673,90 @@ class Transmitter(TransmitterBase):
 
     def testStatus(self):
         jails = [self.jailName]
-        self.assertEqual(self.transm.proceed(["status"]),
-            (0, [('Number of jail', len(jails)), ('Jail list', ", ".join(jails))]))
+        self.assertEqual(
+            self.transm.proceed(["status"]),
+            (
+                0,
+                [('Number of jail', len(jails)), ('Jail list', ", ".join(jails))]
+            )
+        )
         self.server.addJail("TestJail2", FAST_BACKEND)
         jails.append("TestJail2")
-        self.assertEqual(self.transm.proceed(["status"]),
-            (0, [('Number of jail', len(jails)), ('Jail list', ", ".join(jails))]))
+        self.assertEqual(
+            self.transm.proceed(["status"]),
+            (
+                0,
+                [('Number of jail', len(jails)), ('Jail list', ", ".join(jails))]
+            )
+        )
 
     def testJailStatus(self):
-        self.assertEqual(self.transm.proceed(["status", self.jailName]),
-            (0,
+        self.assertEqual(
+            self.transm.proceed(["status", self.jailName]),
+            (
+                0,
                 [
                     ('Filter', [
                         ('Currently failed', 0),
                         ('Total failed', 0),
-                        ('File list', [])]
-                    ),
+                        ('File list', [])
+                    ]),
                     ('Actions', [
                         ('Currently banned', 0),
                         ('Total banned', 0),
-                        ('Banned IP list', [])]
-                    )
+                        ('Banned IP list', [])
+                    ])
                 ]
             )
         )
 
     def testJailStatusBasic(self):
-        self.assertEqual(self.transm.proceed(["status", self.jailName, "basic"]),
-            (0,
+        self.assertEqual(
+            self.transm.proceed(["status", self.jailName, "basic"]),
+            (
+                0,
                 [
-                    ('Filter', [
-                        ('Currently failed', 0),
-                        ('Total failed', 0),
-                        ('File list', [])]
+                    (
+                        'Filter',
+                        [
+                            ('Currently failed', 0),
+                            ('Total failed', 0),
+                            ('File list', [])
+                        ]
                     ),
-                    ('Actions', [
-                        ('Currently banned', 0),
-                        ('Total banned', 0),
-                        ('Banned IP list', [])]
+                    (
+                        'Actions',
+                        [
+                            ('Currently banned', 0),
+                            ('Total banned', 0),
+                            ('Banned IP list', [])
+                        ]
                     )
                 ]
             )
         )
 
     def testJailStatusBasicKwarg(self):
-        self.assertEqual(self.transm.proceed(["status", self.jailName, "INVALID"]),
-            (0,
+        self.assertEqual(
+            self.transm.proceed(["status", self.jailName, "INVALID"]),
+            (
+                0,
                 [
-                    ('Filter', [
-                        ('Currently failed', 0),
-                        ('Total failed', 0),
-                        ('File list', [])]
+                    (
+                        'Filter',
+                        [
+                            ('Currently failed', 0),
+                            ('Total failed', 0),
+                            ('File list', [])
+                        ]
                     ),
-                    ('Actions', [
-                        ('Currently banned', 0),
-                        ('Total banned', 0),
-                        ('Banned IP list', [])]
+                    (
+                        'Actions',
+                        [
+                            ('Currently banned', 0),
+                            ('Total banned', 0),
+                            ('Banned IP list', [])
+                        ]
                     )
                 ]
             )
@@ -687,21 +772,29 @@ class Transmitter(TransmitterBase):
         else:
             value = []
 
-        self.assertEqual(self.transm.proceed(["status", self.jailName, "cymru"]),
-            (0,
+        self.assertEqual(
+            self.transm.proceed(["status", self.jailName, "cymru"]),
+            (
+                0,
                 [
-                    ('Filter', [
-                        ('Currently failed', 0),
-                        ('Total failed', 0),
-                        ('File list', [])]
+                    (
+                        'Filter',
+                        [
+                            ('Currently failed', 0),
+                            ('Total failed', 0),
+                            ('File list', [])
+                        ]
                     ),
-                    ('Actions', [
-                        ('Currently banned', 0),
-                        ('Total banned', 0),
-                        ('Banned IP list', []),
-                        ('Banned ASN list', value),
-                        ('Banned Country list', value),
-                        ('Banned RIR list', value)]
+                    (
+                        'Actions',
+                        [
+                            ('Currently banned', 0),
+                            ('Total banned', 0),
+                            ('Banned IP list', []),
+                            ('Banned ASN list', value),
+                            ('Banned Country list', value),
+                            ('Banned RIR list', value)
+                        ]
                     )
                 ]
             )
@@ -729,55 +822,82 @@ class Transmitter(TransmitterBase):
             (0, action))
         self.assertEqual(
             self.transm.proceed(
-                ["get", self.jailName, "actions"])[1][0],
+                ["get", self.jailName, "actions"]
+            )[1][0],
             action)
         for cmd, value in zip(cmdList, cmdValueList):
             self.assertEqual(
                 self.transm.proceed(
-                    ["set", self.jailName, "action", action, cmd, value]),
-                (0, value))
+                    ["set", self.jailName, "action", action, cmd, value]
+                ), (
+                    0, value
+                )
+            )
         for cmd, value in zip(cmdList, cmdValueList):
             self.assertEqual(
-                self.transm.proceed(["get", self.jailName, "action", action, cmd]),
-                (0, value))
+                self.transm.proceed(
+                    ["get", self.jailName, "action", action, cmd]
+                ),
+                (0, value)
+            )
         self.assertEqual(
             self.transm.proceed(
-                ["set", self.jailName, "action", action, "KEY", "VALUE"]),
-            (0, "VALUE"))
+                ["set", self.jailName, "action", action, "KEY", "VALUE"]
+            ),
+            (0, "VALUE")
+        )
         self.assertEqual(
             self.transm.proceed(
-                ["get", self.jailName, "action", action, "KEY"]),
-            (0, "VALUE"))
+                ["get", self.jailName, "action", action, "KEY"]
+            ),
+            (0, "VALUE")
+        )
         self.assertEqual(
             self.transm.proceed(
-                ["get", self.jailName, "action", action, "InvalidKey"])[0],
-            1)
+                ["get", self.jailName, "action", action, "InvalidKey"]
+            )[0],
+            1
+        )
         self.assertEqual(
             self.transm.proceed(
-                ["set", self.jailName, "action", action, "timeout", "10"]),
-            (0, 10))
+                ["set", self.jailName, "action", action, "timeout", "10"]
+            ),
+            (0, 10)
+        )
         self.assertEqual(
             self.transm.proceed(
-                ["get", self.jailName, "action", action, "timeout"]),
-            (0, 10))
+                ["get", self.jailName, "action", action, "timeout"]
+            ),
+            (0, 10)
+        )
         self.assertEqual(
             self.transm.proceed(["set", self.jailName, "delaction", action]),
-            (0, None))
+            (0, None)
+        )
         self.assertEqual(
             self.transm.proceed(
-                ["set", self.jailName, "delaction", "Doesn't exist"])[0],1)
+                ["set", self.jailName, "delaction", "Doesn't exist"]
+            )[0],
+            1
+        )
 
     def testPythonActionMethodsAndProperties(self):
         action = "TestCaseAction"
         try:
             out = self.transm.proceed(
-                ["set", self.jailName, "addaction", action,
-                 os.path.join(TEST_FILES_DIR, "action.d", "action.py"),
-                '{"opt1": "value"}'])
+                [
+                    "set",
+                    self.jailName,
+                    "addaction",
+                    action,
+                    os.path.join(TEST_FILES_DIR, "action.d", "action.py"),
+                    '{"opt1": "value"}'
+                ]
+            )
             self.assertEqual(out, (0, action))
         except AssertionError:
-            if ((2, 6) <= sys.version_info < (2, 6, 5)) \
-                and '__init__() keywords must be strings' in out[1]:
+            if ((2, 6) <= sys.version_info < (2, 6, 5)) and \
+                    '__init__() keywords must be strings' in out[1]:
                 # known issue http://bugs.python.org/issue2646 in 2.6 series
                 # since general Fail2Ban warnings are suppressed in normal
                 # operation -- let's issue Python's native warning here
@@ -787,55 +907,70 @@ class Transmitter(TransmitterBase):
                     "issue forbidding correct operation of Fail2Ban: "
                     "http://bugs.python.org/issue2646  Upgrade your Python and "
                     "meanwhile other intestPythonActionMethodsAndProperties will "
-                    "be skipped" % (sys.version))
+                    "be skipped"
+                    % (sys.version))
                 return
             raise
         self.assertSortedEqual(
-            self.transm.proceed(["get", self.jailName,
-                "actionproperties", action])[1],
-            ['opt1', 'opt2'])
+            self.transm.proceed(
+                ["get", self.jailName, "actionproperties", action]
+            )[1],
+            ['opt1', 'opt2']
+        )
         self.assertEqual(
-            self.transm.proceed(["get", self.jailName, "action", action,
-                "opt1"]),
-            (0, 'value'))
+            self.transm.proceed(
+                ["get", self.jailName, "action", action, "opt1"]
+            ),
+            (0, 'value')
+        )
         self.assertEqual(
-            self.transm.proceed(["get", self.jailName, "action", action,
-                "opt2"]),
-            (0, None))
+            self.transm.proceed(
+                ["get", self.jailName, "action", action, "opt2"]
+            ),
+            (0, None)
+        )
         self.assertSortedEqual(
-            self.transm.proceed(["get", self.jailName, "actionmethods",
-                action])[1],
-            ['ban', 'reban', 'start', 'stop', 'testmethod', 'unban'])
+            self.transm.proceed(
+                ["get", self.jailName, "actionmethods", action]
+            )[1],
+            ['ban', 'reban', 'start', 'stop', 'testmethod', 'unban']
+        )
         self.assertEqual(
-            self.transm.proceed(["set", self.jailName, "action", action,
-                "testmethod", '{"text": "world!"}']),
-            (0, 'Hello world! value'))
+            self.transm.proceed(
+                ["set", self.jailName, "action", action, "testmethod", '{"text": "world!"}']
+            ),
+            (0, 'Hello world! value')
+        )
         self.assertEqual(
-            self.transm.proceed(["set", self.jailName, "action", action,
-                "opt1", "another value"]),
-            (0, 'another value'))
+            self.transm.proceed(
+                ["set", self.jailName, "action", action, "opt1", "another value"]
+            ),
+            (0, 'another value')
+        )
         self.assertEqual(
-            self.transm.proceed(["set", self.jailName, "action", action,
-                "testmethod", '{"text": "world!"}']),
-            (0, 'Hello world! another value'))
+            self.transm.proceed(
+                ["set", self.jailName, "action", action, "testmethod", '{"text": "world!"}']
+            ),
+            (0, 'Hello world! another value')
+        )
 
     def testNOK(self):
-        self.assertEqual(self.transm.proceed(["INVALID", "COMMAND"])[0],1)
+        self.assertEqual(self.transm.proceed(["INVALID", "COMMAND"])[0], 1)
 
     def testSetNOK(self):
         self.assertEqual(
-            self.transm.proceed(["set", "INVALID", "COMMAND"])[0],1)
+            self.transm.proceed(["set", "INVALID", "COMMAND"])[0], 1)
 
     def testGetNOK(self):
         self.assertEqual(
-            self.transm.proceed(["get", "INVALID", "COMMAND"])[0],1)
+            self.transm.proceed(["get", "INVALID", "COMMAND"])[0], 1)
 
     def testStatusNOK(self):
         self.assertEqual(
-            self.transm.proceed(["status", "INVALID", "COMMAND"])[0],1)
+            self.transm.proceed(["status", "INVALID", "COMMAND"])[0], 1)
 
-    def testJournalMatch(self): # pragma: systemd no cover
-        if not filtersystemd: # pragma: no cover
+    def testJournalMatch(self):  # pragma: systemd no cover
+        if not filtersystemd:  # pragma: no cover
             raise unittest.SkipTest("systemd python interface not available")
         jailName = "TestJail2"
         self.server.addJail(jailName, "systemd")
@@ -905,8 +1040,8 @@ class Transmitter(TransmitterBase):
             ["set", jailName, "deljournalmatch", value])
         self.assertTrue(isinstance(result[1], ValueError))
 
-    def testJournalFlagsMatch(self): # pragma: systemd no cover
-        if not filtersystemd: # pragma: no cover
+    def testJournalFlagsMatch(self):  # pragma: systemd no cover
+        if not filtersystemd:  # pragma: no cover
             raise unittest.SkipTest("systemd python interface not available")
         self.assertTrue(True)
         jailName = "TestJail3"
@@ -972,14 +1107,16 @@ class TransmitterLogging(TransmitterBase):
         self.setGetTestNOK("logtarget", "SYSLOG")
         # set back for other tests
         self.setGetTest("syslogsocket", "/dev/log")
-        self.setGetTest("logtarget", "SYSLOG",
-            **{True: {},    # should work on Linux
-               False: dict( # expect to fail otherwise
-                   outCode=1,
-                   outValue=Exception('Failed to change log target'),
-                   repr_=True # Exceptions are not comparable apparently
-                                )
-              }[platform.system() in ('Linux',) and os.path.exists('/dev/log')]
+        self.setGetTest(
+            "logtarget", "SYSLOG",
+            **{
+                True: {},    # should work on Linux
+                False: dict(  # expect to fail otherwise
+                    outCode=1,
+                    outValue=Exception('Failed to change log target'),
+                    repr_=True  # Exceptions are not comparable apparently
+                    )
+            }[platform.system() in ('Linux',) and os.path.exists('/dev/log')]
         )
 
     def testLogLevel(self):
@@ -1011,7 +1148,7 @@ class TransmitterLogging(TransmitterBase):
                 l.warning("After file moved")
                 self.assertEqual(self.transm.proceed(["flushlogs"]), (0, "rolled over"))
                 l.warning("After flushlogs")
-                with open(fn2,'r') as f:
+                with open(fn2, 'r') as f:
                     line1 = next(f)
                     if line1.find('Changed logging target to') >= 0:
                         line1 = next(f)
@@ -1020,13 +1157,13 @@ class TransmitterLogging(TransmitterBase):
                     self.assertTrue(line2.endswith("After file moved\n"))
                     try:
                         n = next(f)
-                        if n.find("Command: ['flushlogs']") >=0:
+                        if n.find("Command: ['flushlogs']") >= 0:
                             self.assertRaises(StopIteration, f.__next__)
                         else:
                             self.fail("Exception StopIteration or Command: ['flushlogs'] expected. Got: %s" % n)
                     except StopIteration:
-                        pass # on higher debugging levels this is expected
-                with open(fn,'r') as f:
+                        pass  # on higher debugging levels this is expected
+                with open(fn, 'r') as f:
                     line1 = f.__next__()
                     if line1.find('rollover performed on') >= 0:
                         line1 = f.__next__()
@@ -1048,8 +1185,15 @@ class TransmitterLogging(TransmitterBase):
         self.setGetTest("bantime.rndtime", "30min", 30*60, jail=self.jailName)
         self.setGetTest("bantime.maxtime", "1000 days", 1000*24*60*60, jail=self.jailName)
         self.setGetTest("bantime.factor", "2", "2", jail=self.jailName)
-        self.setGetTest("bantime.formula", "ban.Time * math.exp(float(ban.Count+1)*banFactor)/math.exp(1*banFactor)", jail=self.jailName)
-        self.setGetTest("bantime.multipliers", "1 5 30 60 300 720 1440 2880", "1 5 30 60 300 720 1440 2880", jail=self.jailName)
+        self.setGetTest(
+            "bantime.formula",
+            "ban.Time * math.exp(float(ban.Count+1)*banFactor)/math.exp(1*banFactor)",
+            jail=self.jailName)
+        self.setGetTest(
+            "bantime.multipliers",
+            "1 5 30 60 300 720 1440 2880",
+            "1 5 30 60 300 720 1440 2880",
+            jail=self.jailName)
         self.setGetTest("bantime.overalljails", "true", "true", jail=self.jailName)
 
 
@@ -1090,59 +1234,59 @@ class RegexTests(unittest.TestCase):
         # e.g. if we made it optional.
         fr = FailRegex(r'%%<HOST>?')
         self.assertFalse(fr.hasMatched())
-        fr.search([('%%',"","")])
+        fr.search([('%%', "", "")])
         self.assertTrue(fr.hasMatched())
         self.assertRaises(RegexException, fr.getHost)
         # The same as above but using separated IPv4/IPv6 expressions
         fr = FailRegex(r'%%inet(?:=<F-IP4/>|inet6=<F-IP6/>)?')
         self.assertFalse(fr.hasMatched())
-        fr.search([('%%inet=test',"","")])
+        fr.search([('%%inet=test', "", "")])
         self.assertTrue(fr.hasMatched())
         self.assertRaises(RegexException, fr.getHost)
         # Success case: using separated IPv4/IPv6 expressions (no HOST)
         fr = FailRegex(r'%%(?:inet(?:=<IP4>|6=<IP6>)?|dns=<DNS>?)')
         self.assertFalse(fr.hasMatched())
-        fr.search([('%%inet=192.0.2.1',"","")])
+        fr.search([('%%inet=192.0.2.1', "", "")])
         self.assertTrue(fr.hasMatched())
         self.assertEqual(fr.getHost(), '192.0.2.1')
-        fr.search([('%%inet6=2001:DB8::',"","")])
+        fr.search([('%%inet6=2001:DB8::', "", "")])
         self.assertTrue(fr.hasMatched())
         self.assertEqual(fr.getHost(), '2001:DB8::')
-        fr.search([('%%dns=example.com',"","")])
+        fr.search([('%%dns=example.com', "", "")])
         self.assertTrue(fr.hasMatched())
         self.assertEqual(fr.getHost(), 'example.com')
         # Success case: using user as failure-id
         fr = FailRegex(r'^test id group: user:\(<F-ID>[^\)]+</F-ID>\)$')
         self.assertFalse(fr.hasMatched())
-        fr.search([('test id group: user:(test login name)',"","")])
+        fr.search([('test id group: user:(test login name)', "", "")])
         self.assertTrue(fr.hasMatched())
         self.assertEqual(fr.getFailID(), 'test login name')
         # Success case: subnet with IPAddr (IP and subnet) conversion:
         fr = FailRegex(r'%%net=<SUBNET>')
-        fr.search([('%%net=192.0.2.1',"","")])
+        fr.search([('%%net=192.0.2.1', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('192.0.2.1', 'inet4'))
-        fr.search([('%%net=192.0.2.1/24',"","")])
+        fr.search([('%%net=192.0.2.1/24', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('192.0.2.0/24', 'inet4'))
-        fr.search([('%%net=2001:DB8:FF:FF::1',"","")])
+        fr.search([('%%net=2001:DB8:FF:FF::1', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('2001:db8:ff:ff::1', 'inet6'))
-        fr.search([('%%net=2001:DB8:FF:FF::1/60',"","")])
+        fr.search([('%%net=2001:DB8:FF:FF::1/60', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('2001:db8:ff:f0::/60', 'inet6'))
         # CIDR:
         fr = FailRegex(r'%%ip="<ADDR>", mask="<CIDR>?"')
-        fr.search([('%%ip="192.0.2.2", mask=""',"","")])
+        fr.search([('%%ip="192.0.2.2", mask=""', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('192.0.2.2', 'inet4'))
-        fr.search([('%%ip="192.0.2.2", mask="24"',"","")])
+        fr.search([('%%ip="192.0.2.2", mask="24"', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('192.0.2.0/24', 'inet4'))
-        fr.search([('%%ip="2001:DB8:2FF:FF::1", mask=""',"","")])
+        fr.search([('%%ip="2001:DB8:2FF:FF::1", mask=""', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('2001:db8:2ff:ff::1', 'inet6'))
-        fr.search([('%%ip="2001:DB8:2FF:FF::1", mask="60"',"","")])
+        fr.search([('%%ip="2001:DB8:2FF:FF::1", mask="60"', "", "")])
         ip = fr.getIP()
         self.assertEqual((ip, ip.familyStr), ('2001:db8:2ff:f0::/60', 'inet6'))
 
@@ -1167,7 +1311,12 @@ class LoggingTests(LogCaptureTestCase):
             badThread = _BadThread()
             badThread.start()
             badThread.join()
-            self.assertTrue( Utils.wait_for( lambda: len(x) and self._is_logged("Unhandled exception"), 3) )
+            self.assertTrue(
+                Utils.wait_for(
+                    lambda: len(x) and
+                            self._is_logged("Unhandled exception"), 3
+                )
+            )
         finally:
             sys.__excepthook__ = prev_exchook
         self.assertLogged("Unhandled exception")
@@ -1241,26 +1390,44 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 logSys.debug('# == %-44s ==', jail + ' - ' + action._name)
                 logSys.debug('# ' + ('=' * 50))
                 # we can currently test only command actions:
-                if not isinstance(action, _actions.CommandAction): continue
+                if not isinstance(action, _actions.CommandAction):
+                    continue
                 # wrap default command processor, just log if (heavy)debug:
                 action.executeCmd = self._executeCmd
+
                 # test start :
-                logSys.debug('# === start ==='); self.pruneLog()
+                logSys.debug('# === start ===')
+                self.pruneLog()
+
                 action.start()
+
                 # test ban ip4 :
-                logSys.debug('# === ban-ipv4 ==='); self.pruneLog()
+                logSys.debug('# === ban-ipv4 ===')
+                self.pruneLog()
+
                 action.ban(aInfos['ipv4'])
+
                 # test unban ip4 :
-                logSys.debug('# === unban ipv4 ==='); self.pruneLog()
+                logSys.debug('# === unban ipv4 ===')
+                self.pruneLog()
+
                 action.unban(aInfos['ipv4'])
+
                 # test ban ip6 :
-                logSys.debug('# === ban ipv6 ==='); self.pruneLog()
+                logSys.debug('# === ban ipv6 ===')
+                self.pruneLog()
+
                 action.ban(aInfos['ipv6'])
+
                 # test unban ip6 :
-                logSys.debug('# === unban ipv6 ==='); self.pruneLog()
+                logSys.debug('# === unban ipv6 ===')
+                self.pruneLog()
+
                 action.unban(aInfos['ipv6'])
+
                 # test stop :
-                logSys.debug('# === stop ==='); self.pruneLog()
+                logSys.debug('# === stop ===')
+                self.pruneLog()
                 action.stop()
 
     def testCheckStockJailActions(self):
@@ -1297,7 +1464,7 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 # (we don't use it in this test at all):
                 elif unittest.F2B.fast and (
                     len(cmd) > 3 and cmd[0] in ('set', 'multi-set') and cmd[2] == 'addfailregex'
-                ): # pragma: no cover
+                ):  # pragma: no cover
                     cmd[0] = "set"
                     cmd[3] = "DUMMY-REGEX <HOST>"
                 # command to server, use cmdHandler direct instead of `transm.proceed(cmd)`:
@@ -1348,7 +1515,6 @@ class ServerConfigReaderTests(LogCaptureTestCase):
             # test executing action commands:
             self._testExecActions(server)
 
-
     def testCheckStockCommandActions(self):
         unittest.F2B.SkipIfCfgMissing(stock=True)
         # test cases to check valid ipv4/ipv6 action definition, tuple with (('jail', 'action[params]', 'tests', ...)
@@ -1370,21 +1536,31 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 ),
                 'ip4-start': (
                     r"`nft add set inet f2b-table addr-set-j-w-nft-mp \{ type ipv4_addr\; \}`",
-                    r"`nft add rule inet f2b-table f2b-chain $proto dport \{ $(echo 'http,https' | sed s/:/-/g) \} ip saddr @addr-set-j-w-nft-mp reject`",
+
+                    r"`nft add rule inet f2b-table f2b-chain $proto dport \{ "
+                    r"$(echo 'http,https' | sed s/:/-/g) \} ip saddr @addr-set-j-w-nft-mp reject`",
                 ),
                 'ip6-start': (
                     r"`nft add set inet f2b-table addr6-set-j-w-nft-mp \{ type ipv6_addr\; \}`",
-                    r"`nft add rule inet f2b-table f2b-chain $proto dport \{ $(echo 'http,https' | sed s/:/-/g) \} ip6 saddr @addr6-set-j-w-nft-mp reject`",
+
+                    r"`nft add rule inet f2b-table f2b-chain $proto dport \{ $(echo "
+                    r"'http,https' | sed s/:/-/g) \} ip6 saddr @addr6-set-j-w-nft-mp reject`",
                 ),
                 'flush': (
                     "`{ nft flush set inet f2b-table addr-set-j-w-nft-mp 2> /dev/null; } || ",
                     "`{ nft flush set inet f2b-table addr6-set-j-w-nft-mp 2> /dev/null; } || ",
                 ),
                 'stop': (
-                    "`{ nft -a list chain inet f2b-table f2b-chain | grep -oP '@addr-set-j-w-nft-mp\s+.*\s+\Khandle\s+(\d+)$'; } | while read -r hdl; do`",
+                    "`{ nft -a list chain inet f2b-table f2b-chain | "
+                    "grep -oP '@addr-set-j-w-nft-mp\s+.*\s+\Khandle\s+(\d+)$'; } | "
+                    "while read -r hdl; do`",
+
                     "`nft delete rule inet f2b-table f2b-chain $hdl; done`",
                     "`nft delete set inet f2b-table addr-set-j-w-nft-mp`",
-                    "`{ nft -a list chain inet f2b-table f2b-chain | grep -oP '@addr6-set-j-w-nft-mp\s+.*\s+\Khandle\s+(\d+)$'; } | while read -r hdl; do`",
+
+                    "`{ nft -a list chain inet f2b-table f2b-chain | "
+                    "grep -oP '@addr6-set-j-w-nft-mp\s+.*\s+\Khandle\s+(\d+)$'; } | "
+                    "while read -r hdl; do`",
                     "`nft delete rule inet f2b-table f2b-chain $hdl; done`",
                     "`nft delete set inet f2b-table addr6-set-j-w-nft-mp`",
                 ),
@@ -1412,30 +1588,44 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 'ip4': ('ip ', 'ipv4_addr', 'addr-'), 'ip6': ('ip6 ', 'ipv6_addr', 'addr6-'),
                 '*-start': (
                     r"`nft add table inet f2b-table`",
-                    r"`nft -- add chain inet f2b-table f2b-chain \{ type filter hook input priority -1 \; \}`",
+
+                    r"`nft -- add chain inet f2b-table f2b-chain \{ type "
+                    r"filter hook input priority -1 \; \}`",
                 ),
                 'ip4-start': (
                     r"`nft add set inet f2b-table addr-set-j-w-nft-ap \{ type ipv4_addr\; \}`",
-                    r"`nft add rule inet f2b-table f2b-chain meta l4proto \{ tcp,udp \} ip saddr @addr-set-j-w-nft-ap reject`",
+
+                    r"`nft add rule inet f2b-table f2b-chain meta l4proto "
+                    r"\{ tcp,udp \} ip saddr @addr-set-j-w-nft-ap reject`",
                 ),
                 'ip6-start': (
                     r"`nft add set inet f2b-table addr6-set-j-w-nft-ap \{ type ipv6_addr\; \}`",
-                    r"`nft add rule inet f2b-table f2b-chain meta l4proto \{ tcp,udp \} ip6 saddr @addr6-set-j-w-nft-ap reject`",
+
+                    r"`nft add rule inet f2b-table f2b-chain meta "
+                    r"l4proto \{ tcp,udp \} ip6 saddr @addr6-set-j-w-nft-ap reject`",
                 ),
                 'flush': (
                     "`{ nft flush set inet f2b-table addr-set-j-w-nft-ap 2> /dev/null; } || ",
                     "`{ nft flush set inet f2b-table addr6-set-j-w-nft-ap 2> /dev/null; } || ",
                 ),
                 'stop': (
-                    "`{ nft -a list chain inet f2b-table f2b-chain | grep -oP '@addr-set-j-w-nft-ap\s+.*\s+\Khandle\s+(\d+)$'; } | while read -r hdl; do`",
+                    "`{ nft -a list chain inet f2b-table f2b-chain | "
+                    "grep -oP '@addr-set-j-w-nft-ap\s+.*\s+\Khandle\s+(\d+)$'; } | "
+                    "while read -r hdl; do`",
+
                     "`nft delete rule inet f2b-table f2b-chain $hdl; done`",
                     "`nft delete set inet f2b-table addr-set-j-w-nft-ap`",
-                    "`{ nft -a list chain inet f2b-table f2b-chain | grep -oP '@addr6-set-j-w-nft-ap\s+.*\s+\Khandle\s+(\d+)$'; } | while read -r hdl; do`",
+
+                    "`{ nft -a list chain inet f2b-table f2b-chain | "
+                    "grep -oP '@addr6-set-j-w-nft-ap\s+.*\s+\Khandle\s+(\d+)$'; } | "
+                    "while read -r hdl; do`",
+
                     "`nft delete rule inet f2b-table f2b-chain $hdl; done`",
                     "`nft delete set inet f2b-table addr6-set-j-w-nft-ap`",
                 ),
                 'ip4-check': (
-                    r"""`nft list chain inet f2b-table f2b-chain | grep -q '@addr-set-j-w-nft-ap[ \t]'`""",
+                    r"""`nft list chain inet f2b-table f2b-chain "
+                    r"| grep -q '@addr-set-j-w-nft-ap[ \t]'`""",
                 ),
                 'ip6-check': (
                     r"""`nft list chain inet f2b-table f2b-chain | grep -q '@addr6-set-j-w-nft-ap[ \t]'`""",
@@ -2069,8 +2259,10 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 # test ban ip4 :
                 self.pruneLog('# === ban-ipv4 ===')
                 action.ban(aInfos['ipv4'])
-                if tests.get('ip4-start'): self.assertLogged(*tests.get('*-start', ())+tests['ip4-start'], all=True)
-                if tests.get('ip6-start'): self.assertNotLogged(*tests['ip6-start'], all=True)
+                if tests.get('ip4-start'):
+                    self.assertLogged(*tests.get('*-start', ())+tests['ip4-start'], all=True)
+                if tests.get('ip6-start'):
+                    self.assertNotLogged(*tests['ip6-start'], all=True)
                 self.assertLogged(*tests['ip4-ban'], all=True)
                 self.assertNotLogged(*tests['ip6'], all=True)
                 # test unban ip4 :
@@ -2081,8 +2273,10 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 # test ban ip6 :
                 self.pruneLog('# === ban ipv6 ===')
                 action.ban(aInfos['ipv6'])
-                if tests.get('ip6-start'): self.assertLogged(*tests.get('*-start', ())+tests['ip6-start'], all=True)
-                if tests.get('ip4-start'): self.assertNotLogged(*tests['ip4-start'], all=True)
+                if tests.get('ip6-start'):
+                    self.assertLogged(*tests.get('*-start', ())+tests['ip6-start'], all=True)
+                if tests.get('ip4-start'):
+                    self.assertNotLogged(*tests['ip4-start'], all=True)
                 self.assertLogged(*tests['ip6-ban'], all=True)
                 self.assertNotLogged(*tests['ip4'], all=True)
                 # test unban ip6 :
@@ -2111,7 +2305,8 @@ class ServerConfigReaderTests(LogCaptureTestCase):
                 # test stop :
                 self.pruneLog('# === stop ===')
                 action.stop()
-                if tests.get('stop'): self.assertLogged(*tests['stop'], all=True)
+                if tests.get('stop'):
+                    self.assertLogged(*tests['stop'], all=True)
 
     def _executeMailCmd(self, realCmd, timeout=60):
         # replace pipe to mail with pipe to cat:
@@ -2119,11 +2314,12 @@ class ServerConfigReaderTests(LogCaptureTestCase):
         if isinstance(realCmd, list):
             cmd = realCmd[0]
         cmd = re.sub(r'\)\s*\|\s*(\S*mail\b[^\n]*)',
-            r') | cat; printf "\\n... | "; echo \1', cmd)
+                     r') | cat; printf "\\n... | "; echo \1', cmd)
         # replace abuse retrieving (possible no-network), just replace first occurrence of 'dig...':
         cmd = re.sub(r'\bADDRESSES=\$\(dig\s[^\n]+',
-            lambda m: 'ADDRESSES="abuse-1@abuse-test-server, abuse-2@abuse-test-server"',
-                cmd, 1)
+                     lambda m:
+                     'ADDRESSES="abuse-1@abuse-test-server, abuse-2@abuse-test-server"',
+                     cmd, 1)
         if isinstance(realCmd, list):
             realCmd[0] = cmd
         else:
@@ -2135,98 +2331,121 @@ class ServerConfigReaderTests(LogCaptureTestCase):
         unittest.F2B.SkipIfCfgMissing(stock=True)
         testJailsActions = (
             # mail-whois-lines --
-            ('j-mail-whois-lines',
+            (
+                'j-mail-whois-lines',
+
                 'mail-whois-lines['
-                  'name=%(__name__)s, grepopts="-m 1", grepmax=2, mailcmd="mail -s", ' +
-                    # 2 logs to test grep from multiple logs:
-                  'logpath="' + os.path.join(TEST_FILES_DIR, "testcase01.log") + '\n' +
-                '         ' + os.path.join(TEST_FILES_DIR, "testcase01a.log") + '", '
-                  '_whois_command="echo \'-- information about <ip> --\'"'
-                  ']',
-            {
-                'ip4-ban': (
-                    'The IP 87.142.124.10 has just been banned by Fail2Ban after',
-                    '100 attempts against j-mail-whois-lines.',
-                    'Here is more information about 87.142.124.10 :',
-                    '-- information about 87.142.124.10 --',
-                    'Lines containing failures of 87.142.124.10 (max 2)',
-                    'testcase01.log:Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
-                    'testcase01a.log:Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
-                ),
-            }),
+                'name=%(__name__)s, grepopts="-m 1", grepmax=2, mailcmd="mail -s", ' +
+                # 2 logs to test grep from multiple logs:
+                'logpath="' + os.path.join(TEST_FILES_DIR, "testcase01.log") + '\n' +
+                '         ' + os.path.join(TEST_FILES_DIR, "testcase01a.log") +
+                '", '
+                '_whois_command="echo \'-- information about <ip> --\'"'
+               ']',
+                {
+                    'ip4-ban':
+                        (
+                            'The IP 87.142.124.10 has just been banned by Fail2Ban after',
+                            '100 attempts against j-mail-whois-lines.',
+                            'Here is more information about 87.142.124.10 :',
+                            '-- information about 87.142.124.10 --',
+                            'Lines containing failures of 87.142.124.10 (max 2)',
+                            # next 2 lines are part of a concatenated string
+                            'testcase01.log:Dec 31 11:59:59 [sshd] error: PAM: Authentication '
+                            'failure for kevin from 87.142.124.10',
+                            # next 2 lines are part of a concatenated string
+                            'testcase01a.log:Dec 31 11:55:01 [sshd] error: PAM: Authentication '
+                            'failure for test from 87.142.124.10',
+                        ),
+                }
+            ),
             # sendmail-whois-lines --
-            ('j-sendmail-whois-lines',
+            (
+                'j-sendmail-whois-lines',
                 'sendmail-whois-lines['
-                  '''name=%(__name__)s, grepopts="-m 1", grepmax=2, mailcmd='testmail -f "<sender>" "<dest>"', ''' +
-                    # 2 logs to test grep from multiple logs:
-                  'logpath="' + os.path.join(TEST_FILES_DIR, "testcase01.log") + '\n' +
+                '''name=%(__name__)s, grepopts="-m 1", grepmax=2, mailcmd='testmail -f "<sender>" "<dest>"', ''' +
+                # 2 logs to test grep from multiple logs:
+                'logpath="' + os.path.join(TEST_FILES_DIR, "testcase01.log") + '\n' +
                 '         ' + os.path.join(TEST_FILES_DIR, "testcase01a.log") + '", '
-                  '_whois_command="echo \'-- information about <ip> --\'"'
-                  ']',
-            {
-                'ip4-ban': (
-                    'The IP 87.142.124.10 has just been banned by Fail2Ban after',
-                    '100 attempts against j-sendmail-whois-lines.',
-                    'Here is more information about 87.142.124.10 :',
-                    '-- information about 87.142.124.10 --',
-                    'Lines containing failures of 87.142.124.10 (max 2)',
-                    'testcase01.log:Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
-                    'testcase01a.log:Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
-                ),
-            }),
+                '_whois_command="echo \'-- information about <ip> --\'"'
+                ']',
+                {
+                    'ip4-ban':
+                        (
+                            'The IP 87.142.124.10 has just been banned by Fail2Ban after',
+                            '100 attempts against j-sendmail-whois-lines.',
+                            'Here is more information about 87.142.124.10 :',
+                            '-- information about 87.142.124.10 --',
+                            'Lines containing failures of 87.142.124.10 (max 2)',
+                            'testcase01.log:Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
+                            'testcase01a.log:Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
+                        ),
+                }
+            ),
             # complain --
-            ('j-complain-abuse',
+            (
+                'j-complain-abuse',
+
                 'complain['
-                  'name=%(__name__)s, grepopts="-m 1", grepmax=2, mailcmd="mail -s \'Hostname: <ip-host>, family: <family>\' - ",' +
-                  # test reverse ip:
-                  'debug=1,' +
-                    # 2 logs to test grep from multiple logs:
-                  'logpath="' + os.path.join(TEST_FILES_DIR, "testcase01.log") + '\n' +
-                '         ' + os.path.join(TEST_FILES_DIR, "testcase01a.log") + '", '
-                  ']',
-            {
-                'ip4-ban': (
-                    # test reverse ip:
-                    'try to resolve 10.124.142.87.abuse-contacts.abusix.org',
-                    'Lines containing failures of 87.142.124.10 (max 2)',
-                    'testcase01.log:Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
-                    'testcase01a.log:Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
-                    # both abuse mails should be separated with space:
-                    'mail -s Hostname: test-host, family: inet4 - Abuse from 87.142.124.10 abuse-1@abuse-test-server abuse-2@abuse-test-server',
-                ),
-                'ip6-ban': (
-                    # test reverse ip:
-                    'try to resolve 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.abuse-contacts.abusix.org',
-                    'Lines containing failures of 2001:db8::1 (max 2)',
-                    # both abuse mails should be separated with space:
-                    'mail -s Hostname: test-host, family: inet6 - Abuse from 2001:db8::1 abuse-1@abuse-test-server abuse-2@abuse-test-server',
-                ),
-            }),
+                'name=%(__name__)s, grepopts="-m 1", grepmax=2, mailcmd="mail -s \'Hostname: <ip-host>, family: <family>\' - ",' +
+                # test reverse ip:
+                'debug=1,'
+                # 2 logs to test grep from multiple logs:
+                + 'logpath="'
+                + os.path.join(TEST_FILES_DIR, "testcase01.log") + '\n'
+                + '         ' + os.path.join(TEST_FILES_DIR, "testcase01a.log") + '", '
+                ']',
+                {
+                    'ip4-ban':
+                        (
+                            # test reverse ip:
+                            'try to resolve 10.124.142.87.abuse-contacts.abusix.org',
+                            'Lines containing failures of 87.142.124.10 (max 2)',
+                            'testcase01.log:Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
+                            'testcase01a.log:Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
+                            # both abuse mails should be separated with space:
+                            'mail -s Hostname: test-host, family: inet4 - Abuse from 87.142.124.10 abuse-1@abuse-test-server abuse-2@abuse-test-server',
+                        ),
+                    'ip6-ban':
+                        (
+                            # test reverse ip:
+                            'try to resolve 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.abuse-contacts.abusix.org',
+                            'Lines containing failures of 2001:db8::1 (max 2)',
+                            # both abuse mails should be separated with space:
+                            'mail -s Hostname: test-host, family: inet6 - Abuse from 2001:db8::1 abuse-1@abuse-test-server abuse-2@abuse-test-server',
+                        ),
+                }
+            ),
             # xarf-login-attack --
-            ('j-xarf-abuse',
+            (
+                'j-xarf-abuse',
+
                 'xarf-login-attack['
-                  'name=%(__name__)s, mailcmd="mail", mailargs="",' +
-                  # test reverse ip:
-                  'debug=1' +
-                  ']',
-            {
-                'ip4-ban': (
-                    # test reverse ip:
-                    'try to resolve 10.124.142.87.abuse-contacts.abusix.org',
-                    'We have detected abuse from the IP address 87.142.124.10',
-                    'Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
-                    'Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
-                    # both abuse mails should be separated with space:
-                    'mail abuse-1@abuse-test-server abuse-2@abuse-test-server',
-                ),
-                'ip6-ban': (
-                    # test reverse ip:
-                    'try to resolve 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.abuse-contacts.abusix.org',
-                    'We have detected abuse from the IP address 2001:db8::1',
-                    # both abuse mails should be separated with space:
-                    'mail abuse-1@abuse-test-server abuse-2@abuse-test-server',
-                ),
-            }),
+                'name=%(__name__)s, mailcmd="mail", mailargs="",' +
+                # test reverse ip:
+                'debug=1' +
+                ']',
+                {
+                    'ip4-ban':
+                        (
+                            # test reverse ip:
+                            'try to resolve 10.124.142.87.abuse-contacts.abusix.org',
+                            'We have detected abuse from the IP address 87.142.124.10',
+                            'Dec 31 11:59:59 [sshd] error: PAM: Authentication failure for kevin from 87.142.124.10',
+                            'Dec 31 11:55:01 [sshd] error: PAM: Authentication failure for test from 87.142.124.10',
+                            # both abuse mails should be separated with space:
+                            'mail abuse-1@abuse-test-server abuse-2@abuse-test-server',
+                        ),
+                    'ip6-ban':
+                        (
+                            # test reverse ip:
+                            'try to resolve 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.abuse-contacts.abusix.org',
+                            'We have detected abuse from the IP address 2001:db8::1',
+                            # both abuse mails should be separated with space:
+                            'mail abuse-1@abuse-test-server abuse-2@abuse-test-server',
+                        ),
+                }
+            ),
         )
         server = TestServer()
         transm = server._Server__transm

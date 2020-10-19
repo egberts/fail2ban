@@ -31,13 +31,13 @@ import os
 import signal
 import subprocess
 import sys
-from     threading import Lock
+from threading import Lock
 import time
 from ..helpers import getLogger, _merge_dicts, uni_decode
 
 try:
     from collections import OrderedDict
-except ImportError: # pragma: 3.x no cover
+except ImportError:  # pragma: 3.x no cover
     OrderedDict = dict
 
 if sys.version_info >= (3, 3):
@@ -51,32 +51,29 @@ logSys = getLogger(__name__)
 # Some hints on common abnormal exit codes
 _RETCODE_HINTS = {
     127: '"Command not found".  Make sure that all commands in %(realCmd)r '
-            'are in the PATH of fail2ban-server process '
-            '(grep -a PATH= /proc/`pidof -x fail2ban-server`/environ). '
-            'You may want to start '
-            '"fail2ban-server -f" separately, initiate it with '
-            '"fail2ban-client reload" in another shell session and observe if '
-            'additional informative error messages appear in the terminals.'
+         'are in the PATH of fail2ban-server process '
+         '(grep -a PATH= /proc/`pidof -x fail2ban-server`/environ). '
+         'You may want to start '
+         '"fail2ban-server -f" separately, initiate it with '
+         '"fail2ban-client reload" in another shell session and observe if '
+         'additional informative error messages appear in the terminals.'
     }
 
 # Dictionary to lookup signal name from number
-signame = dict((num, name)
-    for name, num in list(signal.__dict__.items()) if name.startswith("SIG"))
+signame = dict((num, name) for name, num in list(signal.__dict__.items()) if name.startswith("SIG"))
+
 
 class Utils(object):
     """Utilities provide diverse static methods like executes OS shell commands, etc.
     """
-
     DEFAULT_SLEEP_TIME = 2
     DEFAULT_SLEEP_INTERVAL = 0.2
     DEFAULT_SHORT_INTERVAL = 0.001
     DEFAULT_SHORTEST_INTERVAL = DEFAULT_SHORT_INTERVAL / 100
 
-
     class Cache(object):
         """A simple cache with a TTL and limit on size
         """
-
         def __init__(self, *args, **kwargs):
             self.setOptions(*args, **kwargs)
             self._cache = OrderedDict()
@@ -111,10 +108,10 @@ class Utils(object):
                             # if not yet expired (but has free slot for new entry):
                             if cv[1] > t and len(cache) < self.maxCount:
                                 break
-                    else: # pragma: 3.x no cover (dict is in 2.6 only)
+                    else:  # pragma: 3.x no cover (dict is in 2.6 only)
                         remlst = []
                         for (ck, cv) in list(cache.items()):
-                            # if expired:
+                            #  if expired:
                             if cv[1] <= t:
                                 remlst.append(ck)
                         for ck in remlst:
@@ -132,7 +129,6 @@ class Utils(object):
         def clear(self):
             with self.__lock:
                 self._cache.clear()
-
 
     @staticmethod
     def setFBlockMode(fhandle, value):
@@ -168,8 +164,10 @@ class Utils(object):
         return realCmd
 
     @staticmethod
-    def executeCmd(realCmd, timeout=60, shell=True, output=False, tout_kill_tree=True,
-        success_codes=(0,), varsDict=None):
+    def executeCmd(
+            realCmd, timeout=60, shell=True,
+            output=False, tout_kill_tree=True,
+            success_codes=(0,), varsDict=None):
         """Executes a command.
 
         Parameters
@@ -206,7 +204,7 @@ class Utils(object):
             if shell:
                 # build map as array of vars and command line array:
                 realCmd = Utils.buildShellCmd(realCmd, varsDict)
-            else: # pragma: no cover - currently unused
+            else:  # pragma: no cover - currently unused
                 env = _merge_dicts(os.environ, varsDict)
         realCmdId = id(realCmd)
         logCmd = lambda level: logSys.log(level, "%x -- exec: %s", realCmdId, realCmd)
@@ -227,25 +225,28 @@ class Utils(object):
                     retcode = retcode[1]
             # if timeout:
             if retcode is None:
-                if logCmd: logCmd(logging.ERROR); logCmd = None
-                logSys.error("%x -- timed out after %s seconds." %
-                    (realCmdId, timeout))
+                if logCmd:
+                    logCmd(logging.ERROR)
+                    logCmd = None
+                logSys.error("%x -- timed out after %s seconds." % (realCmdId, timeout))
                 pgid = os.getpgid(popen.pid)
                 # if not tree - first try to terminate and then kill, otherwise - kill (-9) only:
-                os.killpg(pgid, signal.SIGTERM) # Terminate the process
+                os.killpg(pgid, signal.SIGTERM)  # Terminate the process
                 time.sleep(Utils.DEFAULT_SLEEP_INTERVAL)
                 retcode = popen.poll()
-                #logSys.debug("%s -- terminated %s ", realCmd, retcode)
-                if retcode is None or tout_kill_tree: # Still going...
-                    os.killpg(pgid, signal.SIGKILL) # Kill the process
+                # logSys.debug("%s -- terminated %s ", realCmd, retcode)
+                if retcode is None or tout_kill_tree:  # Still going...
+                    os.killpg(pgid, signal.SIGKILL)  # Kill the process
                     time.sleep(Utils.DEFAULT_SLEEP_INTERVAL)
-                    if retcode is None: # pragma: no cover - too sporadic
+                    if retcode is None:  # pragma: no cover - too sporadic
                         retcode = popen.poll()
-                    #logSys.debug("%s -- killed %s ", realCmd, retcode)
-                if retcode is None and not Utils.pid_exists(pgid): # pragma: no cover
+                    # logSys.debug("%s -- killed %s ", realCmd, retcode)
+                if retcode is None and not Utils.pid_exists(pgid):  # pragma: no cover
                     retcode = signal.SIGKILL
         except OSError as e:
-            if logCmd: logCmd(logging.ERROR); logCmd = None
+            if logCmd:
+                logCmd(logging.ERROR)
+                logCmd = None
             stderr = "%s -- failed with %s" % (realCmd, e)
             logSys.error(stderr)
             if not popen:
@@ -253,7 +254,9 @@ class Utils(object):
 
         std_level = logging.DEBUG if retcode in success_codes else logging.ERROR
         if std_level >= logSys.getEffectiveLevel():
-            if logCmd: logCmd(std_level-1 if std_level == logging.DEBUG else logging.ERROR); logCmd = None
+            if logCmd:
+                logCmd(std_level-1 if std_level == logging.DEBUG else logging.ERROR)
+                logCmd = None
         # if we need output (to return or to log it):
         if output or std_level >= logSys.getEffectiveLevel():
 
@@ -263,24 +266,26 @@ class Utils(object):
                     if retcode is None or retcode < 0:
                         Utils.setFBlockMode(popen.stdout, False)
                     stdout = popen.stdout.read()
-                except IOError as e: # pragma: no cover
+                except IOError as e:  # pragma: no cover
                     logSys.error(" ... -- failed to read stdout %s", e)
                 if stdout is not None and stdout != '' and std_level >= logSys.getEffectiveLevel():
-                    for l in stdout.splitlines():
-                        logSys.log(std_level, "%x -- stdout: %r", realCmdId, uni_decode(l))
+                    for l_lines in stdout.splitlines():
+                        logSys.log(std_level, "%x -- stdout: %r", realCmdId, uni_decode(l_lines))
             if popen.stderr:
                 try:
                     if retcode is None or retcode < 0:
                         Utils.setFBlockMode(popen.stderr, False)
                     stderr = popen.stderr.read()
-                except IOError as e: # pragma: no cover
+                except IOError as e:  # pragma: no cover
                     logSys.error(" ... -- failed to read stderr %s", e)
                 if stderr is not None and stderr != '' and std_level >= logSys.getEffectiveLevel():
-                    for l in stderr.splitlines():
-                        logSys.log(std_level, "%x -- stderr: %r", realCmdId, uni_decode(l))
+                    for l_lines in stderr.splitlines():
+                        logSys.log(std_level, "%x -- stderr: %r", realCmdId, uni_decode(l_lines))
 
-        if popen.stdout: popen.stdout.close()
-        if popen.stderr: popen.stderr.close()
+        if popen.stdout:
+            popen.stdout.close()
+        if popen.stderr:
+            popen.stderr.close()
 
         success = False
         if retcode in success_codes:
@@ -291,7 +296,8 @@ class Utils(object):
         elif retcode < 0 or retcode > 128:
             # dash would return negative while bash 128 + n
             sigcode = -retcode if retcode < 0 else retcode - 128
-            logSys.error("%x -- killed with %s (return code: %s)",
+            logSys.error(
+                "%x -- killed with %s (return code: %s)",
                 realCmdId, signame.get(sigcode, "signal %i" % sigcode), retcode)
         else:
             msg = _RETCODE_HINTS.get(retcode, None)
@@ -323,7 +329,7 @@ class Utils(object):
             The return value of the last call of `cond`,
             logical False (or None, 0, etc) if timeout occurred.
         """
-        #logSys.log(5, "  wait for %r, tout: %r / %r", cond, timeout, interval)
+        # logSys.log(5, "  wait for %r, tout: %r / %r", cond, timeout, interval)
         ini = 1  # to delay initializations until/when necessary
         while True:
             ret = cond()
@@ -359,7 +365,7 @@ class Utils(object):
                 return e.errno == errno.EPERM
             else:
                 return True
-    else: # pragma: no cover (no windows currently supported)
+    else:  # pragma: no cover (no windows currently supported)
         @staticmethod
         def pid_exists(pid):
             import ctypes

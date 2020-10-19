@@ -1,6 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: t -*-
 # vi: set ft=python sts=4 ts=4 sw=4 noet :
 
+from builtins import filter
+from builtins import object
+
+from future import standard_library
+
 # This file is part of Fail2Ban.
 #
 # Fail2Ban is free software; you can redistribute it and/or modify
@@ -16,24 +21,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Fail2Ban; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
 # Author: Cyril Jaquier
 # Modified by: Yaroslav Halchenko (SafeConfigParserWithIncludes)
-
-from future import standard_library
 standard_library.install_aliases()
-from builtins import filter
-from builtins import object
+
+import os
+import glob
+
+from configparser import NoOptionError, NoSectionError
+from .configparserinc import SafeConfigParserWithIncludes
+from ..helpers import getLogger, _as_bool, _merge_dicts, substituteRecursiveTags
+
 __author__ = "Cyril Jaquier, Yaroslav Halchenko, Serg G. Brester (aka sebres)"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2007 Yaroslav Halchenko, 2015 Serg G. Brester (aka sebres)"
 __license__ = "GPL"
-
-import glob
-import os
-from configparser import NoOptionError, NoSectionError
-
-from .configparserinc import sys, SafeConfigParserWithIncludes, logLevel
-from ..helpers import getLogger, _as_bool, _merge_dicts, substituteRecursiveTags
 
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
@@ -50,7 +51,7 @@ def _OptionsTemplateGen(options):
 	Or it is a dict:
 		{name: [type, default], ...}
 	"""
-	if isinstance(options, (list,tuple)):
+	if isinstance(options, (list, tuple)):
 		for optname in options:
 			if len(optname) > 2:
 				opttype, optname, optvalue = optname
@@ -102,9 +103,9 @@ class ConfigReader(object):
 	def read(self, name, once=True):
 		""" Overloads a default (not shared) read of config reader.
 
-	  To prevent mutiple reads of config files with it includes, reads into 
-	  the config reader, if it was not yet cached/shared by 'name'.
-	  """
+		To prevent mutiple reads of config files with it includes, reads into
+		the config reader, if it was not yet cached/shared by 'name'.
+		"""
 		# already shared ?
 		if not self._cfg:
 			self._create_unshared(name)
@@ -123,9 +124,9 @@ class ConfigReader(object):
 	def _create_unshared(self, name=''):
 		""" Allocates and share a config file by it name.
 
-	  Automatically allocates unshared or reuses shared handle by given 'name' and 
-	  init arguments inside a given shared storage.
-	  """
+		Automatically allocates unshared or reuses shared handle by given 'name' and
+		init arguments inside a given shared storage.
+		"""
 		if not self._cfg and self._cfg_share is not None:
 			self._cfg = self._cfg_share.get(name)
 			if not self._cfg:
@@ -171,7 +172,9 @@ class ConfigReader(object):
 		except AttributeError:
 			raise NoSectionError(section)
 
-	def get(self, sec, opt, raw=False, vars={}):
+	def get(self, sec, opt, raw=False, vars=None):
+		if vars is None:
+			vars = {}
 		try:
 			return self._cfg.get(sec, opt, raw=raw, vars=vars)
 		except AttributeError:
@@ -200,7 +203,7 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
 	
 	def setBaseDir(self, basedir):
 		if basedir is None:
-			basedir = ConfigReaderUnshared.DEFAULT_BASEDIR	# stock system location
+			basedir = ConfigReaderUnshared.DEFAULT_BASEDIR 	# stock system location
 		self._basedir = basedir.rstrip('/')
 	
 	def getBaseDir(self):
@@ -209,12 +212,12 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
 	def read(self, filename):
 		if not os.path.exists(self._basedir):
 			raise ValueError("Base configuration directory %s does not exist "
-							  % self._basedir)
-		if filename.startswith("./"): # pragma: no cover
+								% self._basedir)
+		if filename.startswith("./"):  # pragma: no cover
 			filename = os.path.abspath(filename)
 		basename = os.path.join(self._basedir, filename)
-		logSys.debug("Reading configs for %s under %s " , filename, self._basedir)
-		config_files = [ basename + ".conf" ]
+		logSys.debug("Reading configs for %s under %s ", filename, self._basedir)
+		config_files = [basename + ".conf"]
 
 		# possible further customizations under a .conf.d directory
 		config_dir = basename + '.d'
@@ -231,17 +234,18 @@ class ConfigReaderUnshared(SafeConfigParserWithIncludes):
 			# at least one config exists and accessible
 			logSys.debug("Reading config files: %s", ', '.join(config_files))
 			config_files_read = SafeConfigParserWithIncludes.read(self, config_files)
-			missed = [ cf for cf in config_files if cf not in config_files_read ]
+			missed = [cf for cf in config_files if cf not in config_files_read]
 			if missed:
 				logSys.error("Could not read config files: %s", ', '.join(missed))
 			if config_files_read:
 				return True
 			logSys.error("Found no accessible config files for %r under %s",
-						 filename, self.getBaseDir())
+							filename, self.getBaseDir())
 			return False
 		else:
-			logSys.error("Found no accessible config files for %r " % filename
-						 + (["under %s" % self.getBaseDir(),
+			logSys.error("Found no accessible config files for %r " %
+						 ( filename +
+						   (["under %s" % self.getBaseDir(),
 							 "among existing ones: " + ', '.join(config_files)][bool(len(config_files))]))
 
 			return False

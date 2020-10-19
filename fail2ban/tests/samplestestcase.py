@@ -99,9 +99,11 @@ class FilterSamplesRegex(unittest.TestCase):
         flt.checkFindTime = False
         flt.active = True
         # Read filter:
-        if opts is None: opts = dict()
+        if opts is None:
+            opts = dict()
         opts = opts.copy()
-        filterConf = FilterReader(name, "jail", opts,
+        filterConf = FilterReader(
+            name, "jail", opts,
             basedir=basedir, share_config=unittest.F2B.share_config)
         self.assertEqual(filterConf.getFile(), name)
         self.assertEqual(filterConf.getJailName(), "jail")
@@ -113,7 +115,7 @@ class FilterSamplesRegex(unittest.TestCase):
                 optval = opt[3]
             elif opt[0] == 'set':
                 optval = [opt[3]]
-            else: # pragma: no cover - unexpected
+            else:  # pragma: no cover - unexpected
                 self.fail('Unexpected config-token %r in stream' % (opt,))
             for optval in optval:
                 if opt[2] == "prefregex":
@@ -131,10 +133,12 @@ class FilterSamplesRegex(unittest.TestCase):
         # not hard-anchored at end or has not precise sub expression after <HOST>:
         regexList = flt.getFailRegex()
         for fr in regexList:
-            if RE_WRONG_GREED.search(fr): # pragma: no cover
-                raise AssertionError("Following regexp of \"%s\" contains greedy catch-all before <HOST>, "
-                    "that is not hard-anchored at end or has not precise sub expression after <HOST>:\n%s" %
-                    (fltName, str(fr).replace(RE_HOST, '<HOST>')))
+            if RE_WRONG_GREED.search(fr):  # pragma: no cover
+                raise AssertionError(
+                    "Following regexp of \"%s\" contains greedy catch-all "
+                    "before <HOST>, that is not hard-anchored at end or has "
+                    "not precise sub expression after <HOST>:\n%s"
+                    % (fltName, str(fr).replace(RE_HOST, '<HOST>')))
         # Cache within used filter combinations and return:
         flt = [flt, set()]
         self._filters[fltName] = flt
@@ -142,7 +146,8 @@ class FilterSamplesRegex(unittest.TestCase):
 
     @staticmethod
     def _filterOptions(opts):
-                return dict((k, v) for k, v in list(opts.items()) if not k.startswith('test.'))
+        return dict((k, v) for k, v in list(opts.items()) if not k.startswith('test.'))
+
 
 def testSampleRegexsFactory(name, basedir):
     def testFilter(self):
@@ -159,9 +164,13 @@ def testSampleRegexsFactory(name, basedir):
         faildata = {}
         i = 0
         while i < len(filenames):
-            filename = filenames[i]; i += 1;
-            logFile = fileinput.FileInput(os.path.join(TEST_FILES_DIR, "logs",
-                filename), mode='rb')
+            filename = filenames[i]
+            i += 1
+            logFile = fileinput.FileInput(
+                os.path.join(
+                    TEST_FILES_DIR, "logs",
+                    filename),
+                mode='rb')
 
             ignoreBlock = False
             for line in logFile:
@@ -180,7 +189,7 @@ def testSampleRegexsFactory(name, basedir):
                             self._filterTests = []
                             ignoreBlock = False
                             for faildata in (faildata if isinstance(faildata, list) else [faildata]):
-                                if commonOpts: # merge with common file options:
+                                if commonOpts:  # merge with common file options:
                                     opts = commonOpts.copy()
                                     opts.update(faildata)
                                 else:
@@ -192,7 +201,8 @@ def testSampleRegexsFactory(name, basedir):
                                 if not ignoreBlock:
                                     fltOpts = self._filterOptions(opts)
                                     fltName = opts.get('test.filter-name')
-                                    if not fltName: fltName = str(fltOpts) if fltOpts else ''
+                                    if not fltName:
+                                        fltName = str(fltOpts) if fltOpts else ''
                                     fltName = name + fltName
                                     # read it:
                                     flt = self._readFilter(fltName, name, basedir, opts=fltOpts)
@@ -203,16 +213,18 @@ def testSampleRegexsFactory(name, basedir):
                             filenames.append(faildata)
                             continue
                         # failJSON - faildata contains info of the failure to check it.
-                    except ValueError as e: # pragma: no cover - we've valid json's
-                        raise ValueError("%s: %s:%i" %
-                            (e, logFile.filename(), logFile.filelineno()))
+                    except ValueError as e:  # pragma: no cover - we've valid json's
+                        raise ValueError(
+                            "%s: %s:%i"
+                            % (e, logFile.filename(), logFile.filelineno()))
                     line = next(logFile)
                     line = FileContainer.decode_line(logFile.filename(), 'UTF-8', line)
                 elif ignoreBlock or line.startswith("#") or not line.strip():
                     continue
-                else: # pragma: no cover - normally unreachable
+                else:  # pragma: no cover - normally unreachable
                     faildata = {}
-                if ignoreBlock: continue
+                if ignoreBlock:
+                    continue
 
                 # if filter options was not yet specified:
                 if not self._filterTests:
@@ -234,8 +246,8 @@ def testSampleRegexsFactory(name, basedir):
                         # for logtype "journal" we don't need parse timestamp (simulate real systemd-backend handling):
                         if opts.get('logtype') != 'journal':
                             ret = flt.processLine(line)
-                        else: # simulate journal processing, time is known from journal (formatJournalEntry):
-                            if opts.get('test.prefix-line'): # journal backends creates common prefix-line:
+                        else:  # simulate journal processing, time is known from journal (formatJournalEntry):
+                            if opts.get('test.prefix-line'):  # journal backends creates common prefix-line:
                                 line = opts.get('test.prefix-line') + line
                             ret = flt.processLine(('', TEST_NOW_STR, line), TEST_NOW)
                         if ret:
@@ -253,14 +265,17 @@ def testSampleRegexsFactory(name, basedir):
 
                         if not ret:
                             # Check line is flagged as none match
-                            self.assertFalse(faildata.get('match', False),
+                            self.assertFalse(
+                                faildata.get('match', False),
                                 "Line not matched when should have")
                             continue
 
                         # Check line is flagged to match
-                        self.assertTrue(faildata.get('match', False),
+                        self.assertTrue(
+                            faildata.get('match', False),
                             "Line matched when shouldn't have")
-                        self.assertEqual(len(ret), 1,
+                        self.assertEqual(
+                            len(ret), 1,
                             "Multiple regexs matched %r" % ([x[0] for x in ret]))
 
                         for ret in ret:
@@ -290,18 +305,28 @@ def testSampleRegexsFactory(name, basedir):
                                     jsonTimeLocal = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f")
                                 jsonTime = time.mktime(jsonTimeLocal.timetuple())
                                 jsonTime += jsonTimeLocal.microsecond / 1000000.0
-                                self.assertEqual(fail2banTime, jsonTime,
-                                    "UTC Time  mismatch %s (%s) != %s (%s)  (diff %.3f seconds)" %
-                                    (fail2banTime, time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(fail2banTime)),
-                                    jsonTime, time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(jsonTime)),
-                                    fail2banTime - jsonTime) )
+                                self.assertEqual(
+                                    fail2banTime, jsonTime,
+                                    "UTC Time  mismatch %s (%s) != %s (%s)  (diff %.3f seconds)"
+                                    % (
+                                        fail2banTime, time.strftime(
+                                            "%Y-%m-%dT%H:%M:%S", time.gmtime(fail2banTime)
+                                        ),
+                                        jsonTime, time.strftime(
+                                            "%Y-%m-%dT%H:%M:%S", time.gmtime(jsonTime)
+                                        ),
+                                        fail2banTime - jsonTime
+                                    )
+                                )
 
                             regexsUsedIdx.add(failregex)
                             regexsUsedRe.add(regexList[failregex])
-                    except AssertionError as e: # pragma: no cover
+                    except AssertionError as e:  # pragma: no cover
                         import pprint
-                        raise AssertionError("%s: %s on: %s:%i, line:\n %sregex (%s):\n %s\n"
-                            "faildata: %s\nfail: %s" % (
+                        raise AssertionError(
+                            "%s: %s on: %s:%i, line:\n %sregex (%s):\n %s\n"
+                            "faildata: %s\nfail: %s"
+                            % (
                                 fltName, e, logFile.filename(), logFile.filelineno(),
                                 line, failregex, regexList[failregex] if failregex != -1 else None,
                                 '\n'.join(pprint.pformat(faildata).splitlines()),
@@ -314,10 +339,13 @@ def testSampleRegexsFactory(name, basedir):
             for failRegexIndex, failRegex in enumerate(regexList):
                 self.assertTrue(
                     failRegexIndex in regexsUsedIdx or failRegex in regexsUsedRe,
-                    "%s: Regex has no samples: %i: %r" %
-                        (fltName, failRegexIndex, failRegex))
+                    "%s: Regex has no samples: %i: %r"
+                    %
+                    (fltName, failRegexIndex, failRegex)
+                )
 
     return testFilter
+
 
 for basedir_, filter_ in (
     (CONFIG_DIR, lambda x: not x.endswith('common.conf') and x.endswith('.conf')),

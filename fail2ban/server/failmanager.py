@@ -103,7 +103,7 @@ class FailManager(object):
                     return ticket.getRetry()
                 # if already FailTicket - add it direct, otherwise create (using copy all ticket data):
                 if isinstance(ticket, FailTicket):
-                    fData = ticket;
+                    fData = ticket
                 else:
                     fData = FailTicket.wrap(ticket)
                 if count > ticket.getAttempt():
@@ -118,9 +118,12 @@ class FailManager(object):
                 # in case of having many active failures, it should be ran only
                 # if debug level is "low" enough
                 failures_summary = ', '.join(['%s:%d' % (k, v.getRetry())
-                                              for k,v in  list(self.__failList.items())])
-                logSys.log(logLevel, "Total # of detected failures: %d. Current failures from %d IPs (IP:count): %s"
-                             % (self.__failTotal, len(self.__failList), failures_summary))
+                                              for k, v in list(self.__failList.items())])
+                logSys.log(
+                    logLevel,
+                    "Total # of detected failures: %d. Current failures "
+                    "from %d IPs (IP:count): %s" %
+                    (self.__failTotal, len(self.__failList), failures_summary))
 
         self.__bgSvc.service()
         return attempts
@@ -130,8 +133,8 @@ class FailManager(object):
 
     def cleanup(self, time):
         with self.__lock:
-            todelete = [fid for fid,item in list(self.__failList.items()) \
-                if item.getTime() + self.__maxTime <= time]
+            todelete = [fid for fid, item in list(self.__failList.items())
+                        if item.getTime() + self.__maxTime <= time]
             if len(todelete) == len(self.__failList):
                 # remove all:
                 self.__failList = dict()
@@ -144,8 +147,8 @@ class FailManager(object):
                     del self.__failList[fid]
             else:
                 # create new dictionary without items to be deleted:
-                self.__failList = dict((fid,item) for fid,item in list(self.__failList.items()) \
-                    if item.getTime() + self.__maxTime > time)
+                self.__failList = dict((fid, item) for fid, item in list(self.__failList.items())
+                                       if item.getTime() + self.__maxTime > time)
         self.__bgSvc.service()
 
     def delFailure(self, fid):

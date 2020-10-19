@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 noet :
 
 from __future__ import print_function
+from future import standard_library
 
 # This file is part of Fail2Ban.
 #
@@ -24,8 +25,6 @@ __author__ = "Yaroslav Halchenko"
 __copyright__ = "Copyright (c) 2013 Yaroslav Halchenko"
 __license__ = "GPL"
 
-from future import standard_library
-standard_library.install_aliases()
 from builtins import zip
 from builtins import str
 from builtins import range
@@ -43,6 +42,8 @@ import sys
 import time
 import threading
 import unittest
+import difflib
+import pprint
 
 from io import StringIO
 from functools import wraps
@@ -51,10 +52,8 @@ from ..helpers import getLogger, str2LogLevel, getVerbosityFormat, uni_decode
 from ..server.ipdns import IPAddr, DNSUtils
 from ..server.mytime import MyTime
 from ..server.utils import Utils
-# for action_d.test_smtp :
-from ..server import asyncserver
 from ..version import version
-
+standard_library.install_aliases()
 
 logSys = getLogger(__name__)
 
@@ -63,10 +62,10 @@ TEST_NOW = 1124013600
 CONFIG_DIR = os.environ.get('FAIL2BAN_CONFIG_DIR', None)
 
 if not CONFIG_DIR:
-# Use heuristic to figure out where configuration files are
-    if os.path.exists(os.path.join('config','fail2ban.conf')):
+    # Use heuristic to figure out where configuration files are
+    if os.path.exists(os.path.join('config', 'fail2ban.conf')):
         CONFIG_DIR = 'config'
-    else: # pragma: no cover - normally unreachable
+    else:  # pragma: no cover - normally unreachable
         CONFIG_DIR = '/etc/fail2ban'
 
 # Indicates that we've stock config:
@@ -77,7 +76,10 @@ os.putenv('PYTHONPATH', os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
 
 # Default options, if running from installer (setup.py):
+
+
 class DefaultTestOptions(optparse.Values):
+
     def __init__(self):
         self.__dict__ = {
             'log_level': None, 'verbosity': None, 'log_lazy': True,
@@ -89,6 +91,8 @@ class DefaultTestOptions(optparse.Values):
 #
 # Initialization
 #
+
+
 def getOptParser(doc=""):
     Option = optparse.Option
     # use module docstring for help output
@@ -133,17 +137,18 @@ def getOptParser(doc=""):
         ])
     return p
 
+
 def initProcess(opts):
     # Logger:
     global logSys
     logSys = getLogger("fail2ban")
 
     llev = None
-    if opts.log_level is not None: # pragma: no cover
+    if opts.log_level is not None:  # pragma: no cover
         # so we had explicit settings
         llev = str2LogLevel(opts.log_level)
         logSys.setLevel(llev)
-    else: # pragma: no cover
+    else:  # pragma: no cover
         # suppress the logging but it would leave unittests' progress dots
         # ticking, unless like with '-l critical' which would be silent
         # unless error occurs
@@ -154,12 +159,12 @@ def initProcess(opts):
     verbosity = opts.verbosity
     if verbosity is None:
         verbosity = (
-            1 if llev is None else \
-            4 if llev <= logging.HEAVYDEBUG else \
-            3 if llev <= logging.DEBUG else \
-            2 if llev <= min(logging.INFO, logging.NOTICE) else \
-            1 if llev <= min(logging.WARNING, logging.ERROR) else \
-            0 # if llev <= logging.CRITICAL
+            1 if llev is None else
+            4 if llev <= logging.HEAVYDEBUG else
+            3 if llev <= logging.DEBUG else
+            2 if llev <= min(logging.INFO, logging.NOTICE) else
+            1 if llev <= min(logging.WARNING, logging.ERROR) else
+            0  # if llev <= logging.CRITICAL
         )
         opts.verbosity = verbosity
 
@@ -168,7 +173,7 @@ def initProcess(opts):
 
     fmt = ' %(message)s'
 
-    if opts.log_traceback: # pragma: no cover
+    if opts.log_traceback:  # pragma: no cover
         from ..helpers import FormatterWithTraceBack as Formatter
         fmt = (opts.full_traceback and ' %(tb)s' or ' %(tbc)s') + fmt
     else:
@@ -183,10 +188,9 @@ def initProcess(opts):
 
     # Let know the version
     if opts.verbosity != 0:
-        print("Fail2ban %s test suite. Python %s. Please wait..." \
-                % (version, str(sys.version).replace('\n', '')))
-
-    return opts;
+        print("Fail2ban %s test suite. Python %s. Please wait..."
+              % (version, str(sys.version).replace('\n', '')))
+    return opts
 
 
 class F2B(DefaultTestOptions):
@@ -196,25 +200,29 @@ class F2B(DefaultTestOptions):
 
     def __init__(self, opts):
         self.__dict__ = opts.__dict__
-        if self.fast: # pragma: no cover - normal mode in travis
+        if self.fast:  # pragma: no cover - normal mode in travis
             self.memory_db = True
             self.no_gamin = True
         self.__dict__['share_config'] = {}
+
     def SkipIfFast(self):
         pass
+
     def SkipIfNoNetwork(self):
         pass
 
     def SkipIfCfgMissing(self, **kwargs):
         """Helper to check action/filter config is available
         """
-        if not STOCK: # pragma: no cover
+        if not STOCK:  # pragma: no cover
             if kwargs.get('stock'):
                 raise unittest.SkipTest('Skip test because of missing stock-config files')
             for t in ('action', 'filter'):
                 v = kwargs.get(t)
-                if v is None: continue
-                if os.path.splitext(v)[1] == '': v += '.conf'
+                if v is None:
+                    continue
+                if os.path.splitext(v)[1] == '':
+                    v += '.conf'
                 if not os.path.exists(os.path.join(CONFIG_DIR, t+'.d', v)):
                     raise unittest.SkipTest('Skip test because of missing %s-config for %r' % (t, v))
 
@@ -255,6 +263,7 @@ def with_tmpdir(f):
             shutil.rmtree(tmp)
     return wrapper
 
+
 def with_alt_time(f):
     """Helper decorator to execute test in alternate (fixed) test time."""
     @wraps(f)
@@ -268,11 +277,12 @@ def with_alt_time(f):
 
 
 # backwards compatibility to python 2.6:
-if not hasattr(unittest, 'SkipTest'): # pragma: no cover
+if not hasattr(unittest, 'SkipTest'):  # pragma: no cover
     class SkipTest(Exception):
         pass
     unittest.SkipTest = SkipTest
     _org_AddError = unittest._TextTestResult.addError
+
     def addError(self, test, err):
         if err[0] is SkipTest:
             if self.showAll:
@@ -284,18 +294,20 @@ if not hasattr(unittest, 'SkipTest'): # pragma: no cover
         _org_AddError(self, test, err)
     unittest._TextTestResult.addError = addError
 
+
 def initTests(opts):
-    ## if running from installer (setup.py):
+    # if running from installer (setup.py):
     if not opts:
         opts = initProcess(DefaultTestOptions())
     unittest.F2B = F2B(opts)
     # --fast :
-    if unittest.F2B.fast: # pragma: no cover
+    if unittest.F2B.fast:  # pragma: no cover
         # racy decrease default sleep intervals to test it faster
         # (prevent long sleeping during test cases ... less time goes to sleep):
         Utils.DEFAULT_SLEEP_TIME = 0.0025
         Utils.DEFAULT_SLEEP_INTERVAL = 0.0005
         Utils.DEFAULT_SHORT_INTERVAL = 0.0001
+
         def F2B_SkipIfFast():
             raise unittest.SkipTest('Skip test because of "--fast"')
         unittest.F2B.SkipIfFast = F2B_SkipIfFast
@@ -306,13 +318,16 @@ def initTests(opts):
         Utils.DEFAULT_SHORT_INTERVAL = 0.0005
         # sleep intervals are large - use replacement for sleep to check time to sleep:
         _org_sleep = time.sleep
+
         def _new_sleep(v):
-            if v > max(1, Utils.DEFAULT_SLEEP_TIME): # pragma: no cover
-                raise ValueError('[BAD-CODE] To long sleep interval: %s, try to use conditional Utils.wait_for instead' % v)
+            if v > max(1, Utils.DEFAULT_SLEEP_TIME):  # pragma: no cover
+                raise ValueError(
+                    '[BAD-CODE] To long sleep interval: %s, try to use conditional Utils.wait_for instead'
+                    % v)
             _org_sleep(min(v, Utils.DEFAULT_SLEEP_TIME))
         time.sleep = _new_sleep
     # --no-network :
-    if unittest.F2B.no_network: # pragma: no cover
+    if unittest.F2B.no_network:  # pragma: no cover
         def F2B_SkipIfNoNetwork():
             raise unittest.SkipTest('Skip test because of "--no-network"')
         unittest.F2B.SkipIfNoNetwork = F2B_SkipIfNoNetwork
@@ -335,11 +350,11 @@ def initTests(opts):
         c.set('192.0.2.%s' % i, None)
         c.set('198.51.100.%s' % i, None)
         c.set('203.0.113.%s' % i, None)
-        c.set('2001:db8::%s' %i, 'test-host')
+        c.set('2001:db8::%s' % i, 'test-host')
     # some legal ips used in our test cases (prevent slow dns-resolving and failures if will be changed later):
     c.set('2001:db8::ffff', 'test-other')
     c.set('87.142.124.10', 'test-host')
-    if unittest.F2B.no_network: # pragma: no cover
+    if unittest.F2B.no_network:  # pragma: no cover
         # precache all ip to dns used in test cases:
         c.set('192.0.2.888', None)
         c.set('8.8.4.4', 'dns.google')
@@ -358,7 +373,7 @@ def initTests(opts):
         ):
             c.set(*i)
         # if fast - precache all host names as localhost addresses (speed-up getSelfIPs/ignoreself):
-        if unittest.F2B.fast: # pragma: no cover
+        if unittest.F2B.fast:  # pragma: no cover
             for i in DNSUtils.getSelfNames():
                 c.set(i, DNSUtils.dnsToIp('localhost'))
 
@@ -367,6 +382,7 @@ def mtimesleep():
     # no sleep now should be necessary since polling tracks now not only
     # mtime but also ino and size
     pass
+
 
 old_TZ = os.environ.get('TZ', None)
 
@@ -403,9 +419,9 @@ def gatherTests(regexps=None, opts=None):
     from . import fail2banclienttestcase
     from . import fail2banregextestcase
 
-    if not regexps: # pragma: no cover
+    if not regexps:  # pragma: no cover
         tests = unittest.TestSuite()
-    else: # pragma: no cover
+    else:  # pragma: no cover
         class FilteredTestSuite(unittest.TestSuite):
             _regexps = [re.compile(r) for r in regexps]
 
@@ -413,7 +429,7 @@ def gatherTests(regexps=None, opts=None):
                 matched = []
                 for test in suite:
                     # test of suite loaded with loadTestsFromName may be a suite self:
-                    if isinstance(test, unittest.TestSuite): # pragma: no cover
+                    if isinstance(test, unittest.TestSuite):  # pragma: no cover
                         self.addTest(test)
                         continue
                     # filter by regexp:
@@ -446,7 +462,7 @@ def gatherTests(regexps=None, opts=None):
     try:
         import dns
         tests.addTest(unittest.makeSuite(banmanagertestcase.StatusExtendedCymruInfo))
-    except ImportError: # pragma: no cover
+    except ImportError:  # pragma: no cover
         pass
 
     # ClientBeautifier
@@ -504,7 +520,8 @@ def gatherTests(regexps=None, opts=None):
     testloader = unittest.TestLoader()
     from . import action_d
     for file_ in os.listdir(
-        os.path.abspath(os.path.dirname(action_d.__file__))):
+        os.path.abspath(
+            os.path.dirname(action_d.__file__))):
         if file_.startswith("test_") and file_.endswith(".py"):
             tests.addTest(testloader.loadTestsFromName(
                 "%s.%s" % (action_d.__name__, os.path.splitext(file_)[0])))
@@ -522,26 +539,26 @@ def gatherTests(regexps=None, opts=None):
     try:
         # because gamin can be very slow on some platforms (and can produce many failures
         # with fast sleep interval) - skip it by fast run:
-        if unittest.F2B.fast or unittest.F2B.no_gamin: # pragma: no cover
+        if unittest.F2B.fast or unittest.F2B.no_gamin:  # pragma: no cover
             raise ImportError('Skip, fast: %s, no_gamin: %s' % (unittest.F2B.fast, unittest.F2B.no_gamin))
         from ..server.filtergamin import FilterGamin
         filters.append(FilterGamin)
-    except ImportError as e: # pragma: no cover
+    except ImportError as e:  # pragma: no cover
         logSys.warning("Skipping gamin backend testing. Got exception '%s'" % e)
 
     try:
         from ..server.filterpyinotify import FilterPyinotify
         filters.append(FilterPyinotify)
-    except ImportError as e: # pragma: no cover
+    except ImportError as e:  # pragma: no cover
         logSys.warning("I: Skipping pyinotify backend testing. Got exception '%s'" % e)
 
     for Filter_ in filters:
         tests.addTest(unittest.makeSuite(
             filtertestcase.get_monitor_failures_testcase(Filter_)))
-    try: # pragma: systemd no cover
+    try:  # pragma: systemd no cover
         from ..server.filtersystemd import FilterSystemd
         tests.addTest(unittest.makeSuite(filtertestcase.get_monitor_failures_journal_testcase(FilterSystemd)))
-    except ImportError as e: # pragma: no cover
+    except ImportError as e:  # pragma: no cover
         logSys.warning("I: Skipping systemd backend testing. Got exception '%s'" % e)
 
     # Server test for logging elements which break logging used to support
@@ -555,7 +572,6 @@ def gatherTests(regexps=None, opts=None):
 # Forwards compatibility of unittest.TestCase for some early python versions
 #
 
-import difflib, pprint
 if not hasattr(unittest.TestCase, 'assertDictEqual'):
     def assertDictEqual(self, d1, d2, msg=None):
         self.assert_(isinstance(d1, dict), 'First argument is not a dictionary')
@@ -568,6 +584,7 @@ if not hasattr(unittest.TestCase, 'assertDictEqual'):
             msg = msg or (standardMsg + diff)
             self.fail(msg)
     unittest.TestCase.assertDictEqual = assertDictEqual
+
 
 def assertSortedEqual(self, a, b, level=1, nestedOnly=False, key=repr, msg=None):
     """Compare complex elements (like dict, list or tuple) in sorted order until
@@ -586,6 +603,7 @@ def assertSortedEqual(self, a, b, level=1, nestedOnly=False, key=repr, msg=None)
             if isinstance(v, (set, list, tuple)):
                 return sorted(list(_nest_sorted(v, key) for v in v), key=key)
             return v
+
     # level comparison routine:
     def _assertSortedEqual(a, b, level, nestedOnly, key):
         # first the lengths:
@@ -596,14 +614,14 @@ def assertSortedEqual(self, a, b, level=1, nestedOnly=False, key=repr, msg=None)
             if a == b:
                 return
             raise ValueError('%r != %r' % (a, b))
-        if isinstance(a, dict) and isinstance(b, dict): # compare dict's:
+        if isinstance(a, dict) and isinstance(b, dict):  # compare dict's:
             for k, v1 in list(a.items()):
                 v2 = b[k]
                 if isinstance(v1, (dict, list, tuple)) and isinstance(v2, (dict, list, tuple)):
                     _assertSortedEqual(v1, v2, level-1 if level != 0 else 0, nestedOnly, key)
                 elif v1 != v2:
                     raise ValueError('%r != %r' % (a, b))
-        else: # list, tuple, something iterable:
+        else:  # list, tuple, something iterable:
             a = _nest_sorted(a, key=key)
             b = _nest_sorted(b, key=key)
             for v1, v2 in zip(a, b):
@@ -621,6 +639,8 @@ def assertSortedEqual(self, a, b, level=1, nestedOnly=False, key=repr, msg=None)
             pprint.pformat(b).splitlines())))
         msg = msg or (standardMsg + diff)
         self.fail(msg)
+
+
 unittest.TestCase.assertSortedEqual = assertSortedEqual
 
 if not hasattr(unittest.TestCase, 'assertRaisesRegexp'):
@@ -635,7 +655,7 @@ if not hasattr(unittest.TestCase, 'assertRaisesRegexp'):
     unittest.TestCase.assertRaisesRegexp = assertRaisesRegexp
 
 # always custom following methods, because we use atm better version of both (support generators)
-if True: ## if not hasattr(unittest.TestCase, 'assertIn'):
+if True:  # if not hasattr(unittest.TestCase, 'assertIn'):
     def assertIn(self, a, b, msg=None):
         bb = b
         wrap = False
@@ -643,10 +663,12 @@ if True: ## if not hasattr(unittest.TestCase, 'assertIn'):
             b, bb = itertools.tee(b)
             wrap = True
         if a not in b:
-            if wrap: bb = list(bb)
+            if wrap:
+                bb = list(bb)
             msg = msg or "%r was not found in %r" % (a, bb)
             self.fail(msg)
     unittest.TestCase.assertIn = assertIn
+
     def assertNotIn(self, a, b, msg=None):
         bb = b
         wrap = False
@@ -654,26 +676,33 @@ if True: ## if not hasattr(unittest.TestCase, 'assertIn'):
             b, bb = itertools.tee(b)
             wrap = True
         if a in b:
-            if wrap: bb = list(bb)
+            if wrap:
+                bb = list(bb)
             msg = msg or "%r unexpectedly found in %r" % (a, bb)
             self.fail(msg)
     unittest.TestCase.assertNotIn = assertNotIn
 
 _org_setUp = unittest.TestCase.setUp
+
+
 def _customSetUp(self):
     # print('=='*10, self)
     # so if DEBUG etc -- show them (and log it in travis)!
-    if unittest.F2B.log_level <= logging.DEBUG: # pragma: no cover
+    if unittest.F2B.log_level <= logging.DEBUG:  # pragma: no cover
         sys.stderr.write("\n")
         logSys.debug('='*10 + ' %s ' + '='*20, self.id())
     _org_setUp(self)
-    if unittest.F2B.verbosity > 2: # pragma: no cover
+    if unittest.F2B.verbosity > 2:  # pragma: no cover
         self.__startTime = time.time()
 
+
 _org_tearDown = unittest.TestCase.tearDown
+
+
 def _customTearDown(self):
-    if unittest.F2B.verbosity > 2: # pragma: no cover
+    if unittest.F2B.verbosity > 2:  # pragma: no cover
         sys.stderr.write(" %.3fs -- " % (time.time() - self.__startTime,))
+
 
 unittest.TestCase.setUp = _customSetUp
 unittest.TestCase.tearDown = _customTearDown
@@ -703,7 +732,7 @@ class LogCaptureTestCase(unittest.TestCase):
 
         def truncate(self, size=None):
             """Truncate the internal buffer and records."""
-            if size: # pragma: no cover - not implemented now
+            if size:  # pragma: no cover - not implemented now
                 raise Exception('invalid size argument: %r, should be None or 0' % size)
             self._val = ''
             with self._lock:
@@ -716,9 +745,9 @@ class LogCaptureTestCase(unittest.TestCase):
                 msg = record.getMessage() + '\n'
                 try:
                     self._strm.write(msg)
-                except UnicodeEncodeError: # pragma: no cover - normally unreachable now
+                except UnicodeEncodeError:  # pragma: no cover - normally unreachable now
                     self._strm.write(msg.encode('UTF-8', 'replace'))
-            except Exception as e: # pragma: no cover - normally unreachable
+            except Exception as e:  # pragma: no cover - normally unreachable
                 self._strm.write('Error by logging handler: %r' % e)
 
         def getvalue(self):
@@ -730,7 +759,7 @@ class LogCaptureTestCase(unittest.TestCase):
             lck = self._lock.acquire(False)
             # if records changed:
             if self._dirty & 2:
-                if not lck: # pragma: no cover (may be too sporadic on slow systems)
+                if not lck:  # pragma: no cover (may be too sporadic on slow systems)
                     self._nolckCntr += 1
                     if self._nolckCntr <= 5:
                         return self._val
@@ -738,7 +767,7 @@ class LogCaptureTestCase(unittest.TestCase):
                     self._lock.acquire()
                 # minimize time of lock, avoid dead-locking during cross lock within self._strm ...
                 try:
-                    self._dirty &= ~3 # reset dirty records/buffer flag before cache value built
+                    self._dirty &= ~3  # reset dirty records/buffer flag before cache value built
                     recs = self._recs
                     self._recs = list()
                 finally:
@@ -746,28 +775,28 @@ class LogCaptureTestCase(unittest.TestCase):
                 # submit already emitted (delivered to handle) records:
                 for record in recs:
                     self.__write(record)
-            elif lck: # pragma: no cover - too sporadic for coverage
+            elif lck:  # pragma: no cover - too sporadic for coverage
                 # reset dirty buffer flag (if we can lock, otherwise just next time):
-                self._dirty &= ~1 # reset dirty buffer flag
+                self._dirty &= ~1  # reset dirty buffer flag
                 self._lock.release()
             # cache (outside of log to avoid dead-locking during cross lock within self._strm):
             self._val = self._strm.getvalue()
             # return current string value:
             return self._val
 
-        def handle(self, record): # pragma: no cover
+        def handle(self, record):  # pragma: no cover
             """Handle the specified record direct (not lazy)"""
             self.__write(record)
             # string buffer changed:
             with self._lock:
-                self._dirty |= 1 # buffer changed
+                self._dirty |= 1  # buffer changed
 
         def _handle_lazy(self, record):
             """Lazy handle the specified record on demand"""
             with self._lock:
                 self._recs.append(record)
                 # logged - causes changed string buffer (signal by set _dirty):
-                self._dirty |= 2 # records changed
+                self._dirty |= 2  # records changed
 
     def setUp(self):
         # For extended testing of what gets output into logging
@@ -779,7 +808,7 @@ class LogCaptureTestCase(unittest.TestCase):
         self._log = LogCaptureTestCase._MemHandler(unittest.F2B.log_lazy)
         logSys.handlers = [self._log]
         # lowest log level to capture messages (expected in tests) is Lev.9
-        if self._old_level <= logging.DEBUG: # pragma: no cover
+        if self._old_level <= logging.DEBUG:  # pragma: no cover
             logSys.handlers += self._old_handlers
         if self._old_level > logging.DEBUG-1:
             logSys.setLevel(logging.DEBUG-1)
@@ -800,12 +829,12 @@ class LogCaptureTestCase(unittest.TestCase):
             for s_ in s:
                 if s_ in logged:
                     return True
-            if True: # pragma: no cover
+            if True:  # pragma: no cover
                 return False
         else:
             # each entry should be found:
             for s_ in s:
-                if s_ not in logged: # pragma: no cover
+                if s_ not in logged:  # pragma: no cover
                     return False
             return True
 
@@ -831,16 +860,28 @@ class LogCaptureTestCase(unittest.TestCase):
             # at least one entry should be found:
             if not res:
                 logged = self._log.getvalue()
-                self.fail("None among %r was found in the log%s: ===\n%s===" % (s,
-                    ((', waited %s' % wait) if wait else ''), logged))
+                self.fail(
+                    "None among %r was found in the log%s: ===\n%s==="
+                    % (
+                        s,
+                        ((', waited %s' % wait) if wait else ''),
+                        logged
+                    )
+                )
         else:
             # each entry should be found:
             if not res:
                 logged = self._log.getvalue()
                 for s_ in s:
                     if s_ not in logged:
-                        self.fail("%r was not found in the log%s: ===\n%s===" % (s_,
-                            ((', waited %s' % wait) if wait else ''), logged))
+                        self.fail(
+                            "%r was not found in the log%s: ===\n%s==="
+                            % (
+                                s_,
+                                ((', waited %s' % wait) if wait else ''),
+                                logged
+                            )
+                        )
 
     def assertNotLogged(self, *s, **kwargs):
         """Assert that strings were not logged

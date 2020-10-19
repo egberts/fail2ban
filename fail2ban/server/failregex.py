@@ -34,7 +34,7 @@ from .ipdns import IPAddr
 
 FTAG_CRE = re.compile(r'</?[\w\-]+/?>')
 
-FCUSTNAME_CRE = re.compile(r'^(/?)F-([A-Z0-9_\-]+)$'); # currently uppercase only
+FCUSTNAME_CRE = re.compile(r'^(/?)F-([A-Z0-9_\-]+)$')  # currently uppercase only
 
 R_HOST = [
         # separated ipv4:
@@ -52,41 +52,41 @@ R_HOST = [
         # place-holder for SUBNET tag-replacement
         "",
 ]
-RI_IPV4 =       0
-RI_IPV6 =       1
-RI_DNS =        2
-RI_ADDR =       3
-RI_HOST =       4
-RI_CIDR =       5
+RI_IPV4 = 0
+RI_IPV6 = 1
+RI_DNS = 2
+RI_ADDR = 3
+RI_HOST = 4
+RI_CIDR = 5
 RI_SUBNET = 6
 
-R_HOST[RI_ADDR] =       r"\[?(?:%s|%s)\]?" % (R_HOST[RI_IPV4], R_HOST[RI_IPV6],)
-R_HOST[RI_HOST] =       r"(?:%s|%s)" % (R_HOST[RI_ADDR], R_HOST[RI_DNS],)
+R_HOST[RI_ADDR] = r"\[?(?:%s|%s)\]?" % (R_HOST[RI_IPV4], R_HOST[RI_IPV6],)
+R_HOST[RI_HOST] = r"(?:%s|%s)" % (R_HOST[RI_ADDR], R_HOST[RI_DNS],)
 R_HOST[RI_SUBNET] = r"\[?(?:%s|%s)(?:/%s)?\]?" % (R_HOST[RI_IPV4], R_HOST[RI_IPV6], R_HOST[RI_CIDR],)
 
 RH4TAG = {
     # separated ipv4 (self closed, closed):
-    "IP4":          R_HOST[RI_IPV4],
-    "F-IP4/":       R_HOST[RI_IPV4],
+    "IP4": R_HOST[RI_IPV4],
+    "F-IP4/": R_HOST[RI_IPV4],
     # separated ipv6 (self closed, closed):
-    "IP6":          R_HOST[RI_IPV6],
-    "F-IP6/":       R_HOST[RI_IPV6],
+    "IP6": R_HOST[RI_IPV6],
+    "F-IP6/": R_HOST[RI_IPV6],
     # 2 address groups instead of <ADDR> - in opposition to `<HOST>`,
     # for separate usage of 2 address groups only (regardless of `usedns`), `ip4` and `ip6` together
-    "ADDR":         R_HOST[RI_ADDR],
-    "F-ADDR/":  R_HOST[RI_ADDR],
+    "ADDR": R_HOST[RI_ADDR],
+    "F-ADDR/": R_HOST[RI_ADDR],
     # subnet tags for usage as `<ADDR>/<CIDR>` or `<SUBNET>`:
-    "CIDR":         R_HOST[RI_CIDR],
-    "F-CIDR/":  R_HOST[RI_CIDR],
-    "SUBNET":       R_HOST[RI_SUBNET],
-    "F-SUBNET/":R_HOST[RI_SUBNET],
+    "CIDR": R_HOST[RI_CIDR],
+    "F-CIDR/": R_HOST[RI_CIDR],
+    "SUBNET": R_HOST[RI_SUBNET],
+    "F-SUBNET/": R_HOST[RI_SUBNET],
     # separated dns (self closed, closed):
-    "DNS":          R_HOST[RI_DNS],
-    "F-DNS/":       R_HOST[RI_DNS],
+    "DNS": R_HOST[RI_DNS],
+    "F-DNS/": R_HOST[RI_DNS],
     # default failure-id as no space tag:
-    "F-ID/":        r"""(?P<fid>\S+)""",
+    "F-ID/": r"""(?P<fid>\S+)""",
     # default failure port, like 80 or http :
-    "F-PORT/":  r"""(?P<fport>\w+)""",
+    "F-PORT/": r"""(?P<fport>\w+)""",
 }
 
 # default failure groups map for customizable expressions (with different group-id):
@@ -94,6 +94,7 @@ R_MAP = {
     "id": "fid",
     "port": "fport",
 }
+
 
 def mapTag2Opt(tag):
     tag = tag.lower()
@@ -142,9 +143,9 @@ class Regex(object):
                 if n:
                     g, n = n.group(1), mapTag2Opt(n.group(2))
                     if g == ALTNAME_PRE:
-                        self._altValues.append((k,n))
+                        self._altValues.append((k, n))
                     else:
-                        self._tupleValues.append((k,n))
+                        self._tupleValues.append((k, n))
             self._altValues.sort()
             self._tupleValues.sort()
             self._altValues = self._altValues if len(self._altValues) else None
@@ -169,8 +170,9 @@ class Regex(object):
 
         openTags = dict()
         props = {
-            'nl': 0, # new lines counter by <SKIPLINES> tag;
+            'nl': 0,  # new lines counter by <SKIPLINES> tag;
         }
+
         # tag interpolation callable:
         def substTag(m):
             tag = m.group()
@@ -192,7 +194,7 @@ class Regex(object):
             # (begin / end tag) for customizable expressions, additionally used as
             # user custom tags (match will be stored in ticket data, can be used in actions):
             m = FCUSTNAME_CRE.match(tn)
-            if m: # match F-...
+            if m:  # match F-...
                 m = m.groups()
                 tn = m[1]
                 # close tag:
@@ -200,7 +202,7 @@ class Regex(object):
                     # check it was already open:
                     if openTags.get(tn):
                         return ")"
-                    return tag; # tag not opened, use original
+                    return tag  # tag not opened, use original
                 # open tag:
                 openTags[tn] = 1
                 # if should be mapped:
@@ -243,7 +245,8 @@ class Regex(object):
             buf = Regex._tupleLinesBuf(tupleLines)
         self._matchCache = self._regexObj.search(buf)
         if self._matchCache:
-            if orgLines is None: orgLines = tupleLines
+            if orgLines is None:
+                orgLines = tupleLines
             # if single-line:
             if len(orgLines) <= 1:
                 self._matchedTupleLines = orgLines
@@ -252,7 +255,7 @@ class Regex(object):
                 # Find start of the first line where the match was found
                 try:
                     matchLineStart = self._matchCache.string.rindex(
-                        "\n", 0, self._matchCache.start() +1 ) + 1
+                        "\n", 0, self._matchCache.start() +1) + 1
                 except ValueError:
                     matchLineStart = 0
                 # Find end of the last line where the match was found
@@ -270,8 +273,7 @@ class Regex(object):
                 self._unmatchedTupleLines = orgLines[:lineCount1]
                 n = 0
                 for skippedLine in self.getSkippedLines():
-                    for m, matchedTupleLine in enumerate(
-                        self._matchedTupleLines[n:]):
+                    for m, matchedTupleLine in enumerate(self._matchedTupleLines[n:]):
                         if "".join(matchedTupleLine[::2]) == skippedLine:
                             self._unmatchedTupleLines.append(
                                 self._matchedTupleLines.pop(n+m))
@@ -298,26 +300,26 @@ class Regex(object):
 
     def _getGroupsWithAlt(self):
         fail = self._matchCache.groupdict()
-        #fail = fail.copy()
+        # fail = fail.copy()
         # merge alternate values (e. g. 'alt_user_1' -> 'user' or 'alt_host' -> 'host'):
         if self._altValues:
-            for k,n in self._altValues:
+            for k, n in self._altValues:
                 v = fail.get(k)
                 if v and not fail.get(n):
                     fail[n] = v
         # combine tuple values (e. g. 'id', 'tuple_id' ... 'tuple_id_N' -> 'id'):
         if self._tupleValues:
-            for k,n in self._tupleValues:
+            for k, n in self._tupleValues:
                 v = fail.get(k)
                 t = fail.get(n)
                 if isinstance(t, tuple):
                     t += (v,)
                 else:
-                    t = (t,v,)
+                    t = (t, v,)
                 fail[n] = t
         return fail
 
-    def getGroups(self): # pragma: no cover - abstract function (replaced in __init__)
+    def getGroups(self):  # pragma: no cover - abstract function (replaced in __init__)
         pass
 
     ##
@@ -340,7 +342,7 @@ class Regex(object):
                 break
             # KeyError is because of PyPy issue1665 affecting pypy <= 2.2.1
             except KeyError:
-                if 'PyPy' not in sys.version: # pragma: no cover - not sure this is even reachable
+                if 'PyPy' not in sys.version:  # pragma: no cover - not sure this is even reachable
                     raise
                 break
         return skippedLines.splitlines(False)
@@ -406,8 +408,8 @@ FAILURE_ID_PRESENTS = FAILURE_ID_GROPS + ("mlfid",)
 #
 # This class represents a regular expression with its compiled version.
 
-class FailRegex(Regex):
 
+class FailRegex(Regex):
     ##
     # Constructor.
     #
@@ -421,8 +423,8 @@ class FailRegex(Regex):
         # Check for group "dns", "ip4", "ip6", "fid"
         if (not [grp for grp in FAILURE_ID_PRESENTS if grp in self._regexObj.groupindex]
             and (prefRegex is None or
-                not [grp for grp in FAILURE_ID_PRESENTS if grp in prefRegex._regexObj.groupindex])
-        ):
+            not [grp for grp in FAILURE_ID_PRESENTS if grp in prefRegex._regexObj.groupindex])
+           ):
             raise RegexException("No failure-id group in '%s'" % self._regex)
 
     ##

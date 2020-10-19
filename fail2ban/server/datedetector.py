@@ -68,6 +68,7 @@ def _getPatternTemplate(pattern, key=None):
     DD_patternCache.set(key, template)
     return template
 
+
 def _getAnchoredTemplate(template, wrap=lambda s: '{^LN-BEG}' + s):
     # wrap name:
     name = wrap(template.name)
@@ -88,7 +89,6 @@ def _getAnchoredTemplate(template, wrap=lambda s: '{^LN-BEG}' + s):
     return template2
 
 
-
 class DateDetectorCache(object):
     """Implements the caching of the default templates list.
     """
@@ -103,7 +103,7 @@ class DateDetectorCache(object):
         if self.__templates:
             return self.__templates
         with self.__lock:
-            if self.__templates: # pragma: no cover - race-condition + multi-threaded environment only
+            if self.__templates:  # pragma: no cover - race-condition + multi-threaded environment only
                 return self.__templates
             self._addDefaultTemplate()
             return self.__templates
@@ -205,6 +205,7 @@ class DateDetectorTemplate(object):
     Prevents collectively usage of hits/lastUsed in cached templates
     """
     __slots__ = ('template', 'hits', 'lastUsed', 'distance')
+
     def __init__(self, template):
         self.template = template
         self.hits = 0
@@ -250,7 +251,8 @@ class DateDetector(object):
     def _appendTemplate(self, template, ignoreDup=False):
         name = template.name
         if name in self.__known_names:
-            if ignoreDup: return
+            if ignoreDup:
+                return
             raise ValueError(
                 "There is already a template with name %s" % name)
         self.__known_names.add(name)
@@ -294,9 +296,9 @@ class DateDetector(object):
 
         self._appendTemplate(template)
         logSys.info("  date pattern `%r`: `%s`",
-            getattr(template, 'pattern', ''), template.name)
+                    getattr(template, 'pattern', ''), template.name)
         logSys.debug("  date pattern regex for %r: %s",
-            getattr(template, 'pattern', ''), template.regex)
+                     getattr(template, 'pattern', ''), template.regex)
 
     def addDefaultTemplate(self, filterTemplate=None, preMatch=None, allDefaults=True):
         """Add Fail2Ban's default set of date templates.
@@ -306,11 +308,13 @@ class DateDetector(object):
             DateDetector._defCache.templates if allDefaults else DateDetector._defCache.defaultTemplates
         ):
             # filter if specified:
-            if filterTemplate is not None and not filterTemplate(template): continue
+            if filterTemplate is not None and not filterTemplate(template):
+                continue
             # if exact pattern available - create copy of template, contains replaced {DATE} with default regex:
             if preMatch is not None:
                 # get cached or create a copy with modified name/pattern, using preMatch replacement for {DATE}:
-                template = _getAnchoredTemplate(template,
+                template = _getAnchoredTemplate(
+                    template,
                     wrap=lambda s: RE_DATE_PREMATCH.sub(lambda m: DateTemplate.unboundPattern(s), preMatch))
             # append date detector template (ignore duplicate if some was added before default):
             self._appendTemplate(template, ignoreDup=ignoreDup)
@@ -353,7 +357,7 @@ class DateDetector(object):
         if i < len(self.__templates):
             ddtempl = self.__templates[i]
             template = ddtempl.template
-            if template.flags & (DateTemplate.LINE_BEGIN|DateTemplate.LINE_END):
+            if template.flags & (DateTemplate.LINE_BEGIN | DateTemplate.LINE_END):
                 log(logLevel-1, "  try to match last anchored template #%02i ...", i)
                 match = template.matchDate(line)
                 ignoreBySearch = i
@@ -385,14 +389,14 @@ class DateDetector(object):
                 endpos = match.end()
                 # if different position, possible collision/pattern switch:
                 if (
-                    len(self.__templates) == 1 or # single template:
-                    template.flags & (DateTemplate.LINE_BEGIN|DateTemplate.LINE_END) or
+                    len(self.__templates) == 1 or  # single template:
+                    template.flags & (DateTemplate.LINE_BEGIN | DateTemplate.LINE_END) or
                     (distance == self.__lastPos[0] and endpos == self.__lastEndPos[0])
                 ):
                     log(logLevel, "  matched last time template #%02i", i)
                 else:
                     log(logLevel, "  ** last pattern collision - pattern change, reserve & search ...")
-                    found = match, distance, endpos, i; # save current best alternative
+                    found = match, distance, endpos, i  # save current best alternative
                     match = None
             else:
                 log(logLevel, "  ** last pattern not found - pattern change, search ...")
@@ -412,27 +416,27 @@ class DateDetector(object):
                     endpos = match.end()
                     log(logLevel, "  matched time template #%02i (at %r <= %r, %r) %s",
                         i, distance, ddtempl.distance, self.__lastPos[0], template.name)
-                    ## last (or single) template - fast stop:
+                    # last (or single) template - fast stop:
                     if i+1 >= len(self.__templates):
                         break
-                    ## if line-begin/end anchored - stop searching:
-                    if template.flags & (DateTemplate.LINE_BEGIN|DateTemplate.LINE_END):
+                    # if line-begin/end anchored - stop searching:
+                    if template.flags & (DateTemplate.LINE_BEGIN | DateTemplate.LINE_END):
                         break
-                    ## stop searching if next template still unused, but we had already hits:
+                    # stop searching if next template still unused, but we had already hits:
                     if (distance == 0 and ddtempl.hits) and not self.__templates[i+1].template.hits:
                         break
-                    ## [grave] if distance changed, possible date-match was found somewhere
-                    ## in body of message, so save this template, and search further:
+                    # [grave] if distance changed, possible date-match was found somewhere
+                    # in body of message, so save this template, and search further:
                     if distance > ddtempl.distance or distance > self.__lastPos[0]:
                         log(logLevel, "  ** distance collision - pattern change, reserve")
-                        ## shortest of both:
+                        # shortest of both:
                         if distance < found[1]:
                             found = match, distance, endpos, i
-                        ## search further:
+                        # search further:
                         match = None
                         i += 1
                         continue
-                    ## winner - stop search:
+                    # winner - stop search:
                     break
                 i += 1
             # check other template was found (use this one with shortest distance):
@@ -497,9 +501,9 @@ class DateDetector(object):
             try:
                 date = template.getDate(line, timeMatch[0], default_tz=self.__default_tz)
                 if date is not None:
-                    if logSys.getEffectiveLevel() <= logLevel: # pragma: no cover - heavy debug
+                    if logSys.getEffectiveLevel() <= logLevel:  # pragma: no cover - heavy debug
                         logSys.log(logLevel, "  got time %f for %r using template %s",
-                            date[0], date[1].group(1), template.name)
+                                   date[0], date[1].group(1), template.name)
                     return date
             except ValueError:
                 pass
@@ -518,33 +522,37 @@ class DateDetector(object):
             ddtempl = templates[num]
             if logSys.getEffectiveLevel() <= logLevel:
                 logSys.log(logLevel, "  -> reorder template #%02i, hits: %r", num, ddtempl.hits)
-          ## current hits and time the template was long unused:
+            # current hits and time the template was long unused:
             untime = ddtempl.lastUsed - self.__unusedTime
             weight = ddtempl.weight
-            ## try to move faster (first if unused available, or half of part to current template position):
+            # try to move faster (first if unused available, or half of part to current template position):
             pos = self.__firstUnused if self.__firstUnused < num else num // 2
-            ## don't move too often (multiline logs resp. log's with different date patterns),
-            ## if template not used too long, replace it also :
+
+            # don't move too often (multiline logs resp. log's with different date patterns),
+            # if template not used too long, replace it also :
             def _moveable():
                 pweight = templates[pos].weight
                 if logSys.getEffectiveLevel() <= logLevel:
-                    logSys.log(logLevel, "  -> compare template #%02i & #%02i, weight %.3f > %.3f, hits %r > %r",
-                        num, pos, weight, pweight, ddtempl.hits, templates[pos].hits)
+                    logSys.log(logLevel,
+                               "  -> compare template #%02i & #%02i, weight "
+                               "%.3f > %.3f, hits %r > %r",
+                               num, pos, weight, pweight,
+                               ddtempl.hits, templates[pos].hits)
                 return weight > pweight or untime > templates[pos].lastUsed
-            ##
-            ## if not moveable (smaller weight or target position recently used):
+            #
+            # if not moveable (smaller weight or target position recently used):
             if not _moveable():
-                ## try to move slow (exact 1 position):
+                # try to move slow (exact 1 position):
                 if pos == num-1:
                     return num
                 pos = num-1
-                ## if still smaller and template at position used, don't move:
+                # if still smaller and template at position used, don't move:
                 if not _moveable():
                     return num
-            ## move:
+            # move:
             del templates[num]
             templates[pos:0] = [ddtempl]
-            ## correct first unused:
+            # correct first unused:
             while self.__firstUnused < len(templates) and templates[self.__firstUnused].hits:
                 self.__firstUnused += 1
             if logSys.getEffectiveLevel() <= logLevel:

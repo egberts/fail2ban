@@ -17,9 +17,10 @@
 # along with Fail2Ban; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from builtins import str
 from builtins import map
 from builtins import object
+from builtins import str
+
 __author__ = "Cyril Jaquier, Yaroslav Halchenko"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2013- Yaroslav Halchenko"
 __license__ = "GPL"
@@ -39,7 +40,7 @@ logSys = getLogger(__name__)
 
 class Beautifier(object):
 
-	def __init__(self, cmd = None):
+	def __init__(self, cmd=None):
 		self.__inputCmd = cmd
 
 	def setInputCmd(self, cmd):
@@ -49,8 +50,7 @@ class Beautifier(object):
 		return self.__inputCmd
 
 	def beautify(self, response):
-		logSys.log(5,
-			"Beautify " + repr(response) + " with " + repr(self.__inputCmd))
+		logSys.log(5, "Beautify " + repr(response) + " with " + repr(self.__inputCmd))
 		inC = self.__inputCmd
 		msg = response
 		try:
@@ -93,7 +93,7 @@ class Beautifier(object):
 						msg.append("%s %s:\t%s" % (prefix1, res1[0], val))
 				msg = "\n".join(msg)
 			elif len(inC) < 2:
-				pass # to few cmd args for below
+				pass  # to few cmd args for below
 			elif inC[1] == "syslogsocket":
 				msg = "Current syslog socket is:\n"
 				msg += "`- " + response
@@ -116,7 +116,7 @@ class Beautifier(object):
 					msg = "Current database purge age is:\n"
 					msg += "`- %iseconds" % response
 			elif len(inC) < 3:
-				pass # to few cmd args for below
+				pass  # to few cmd args for below
 			elif inC[2] in ("logpath", "addlogpath", "dellogpath"):
 				if len(response) == 0:
 					msg = "No file is currently monitored"
@@ -150,15 +150,17 @@ class Beautifier(object):
 					for ip in response[:-1]:
 						msg += "|- " + ip + "\n"
 					msg += "`- " + response[-1]
-			elif inC[2] in ("failregex", "addfailregex", "delfailregex",
-							"ignoreregex", "addignoreregex", "delignoreregex"):
+			elif inC[2] in (
+					"failregex", "addfailregex", "delfailregex",
+					"ignoreregex", "addignoreregex", "delignoreregex"
+			):
 				if len(response) == 0:
 					msg = "No regular expression is defined"
 				else:
 					msg = "The following regular expression are defined:\n"
 					c = 0
-					for l in response[:-1]:
-						msg += "|- [" + str(c) + "]: " + l + "\n"
+					for l_response in response[:-1]:
+						msg += "|- [" + str(c) + "]: " + l_response + "\n"
 						c += 1
 					msg += "`- [" + str(c) + "]: " + response[-1]
 			elif inC[2] == "actions":
@@ -192,7 +194,7 @@ class Beautifier(object):
 		except Exception:
 			logSys.warning("Beautifier error. Please report the error")
 			logSys.error("Beautify %r with %r failed", response, self.__inputCmd,
-				exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+							exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 			msg = repr(msg) + repr(response)
 		return msg
 

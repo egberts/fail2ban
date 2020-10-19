@@ -59,7 +59,7 @@ class FilterReader(DefinitionInitConfigReader):
         if (not self._initOpts.get('logtype') and
             not self.has_option('Definition', 'logtype', False)
           ):
-            self._initOpts['logtype'] = ['file','journal'][int(backend.startswith("systemd"))]
+            self._initOpts['logtype'] = ['file', 'journal'][int(backend.startswith("systemd"))]
 
     def convert(self):
         stream = list()
@@ -73,7 +73,8 @@ class FilterReader(DefinitionInitConfigReader):
         prio0idx = 0
         for opt, value in list(opts.items()):
             if opt in ("failregex", "ignoreregex"):
-                if value is None: continue
+                if value is None:
+                    continue
                 multi = []
                 for regex in value.split('\n'):
                     # Do not send a command if the rule is empty.
@@ -86,16 +87,17 @@ class FilterReader(DefinitionInitConfigReader):
             elif opt in ('usedns', 'maxlines', 'prefregex'):
                 # Be sure we set this options first, and usedns is before all regex(s).
                 stream.insert(0 if opt == 'usedns' else prio0idx,
-                    ["set", jailName, opt, value])
+                              ["set", jailName, opt, value])
                 prio0idx += 1
             elif opt in ('datepattern'):
                 stream.append(["set", jailName, opt, value])
             elif opt == 'journalmatch':
                 # Do not send a command if the match is empty.
-                if value is None: continue
+                if value is None:
+                    continue
                 for match in value.split("\n"):
-                    if match == '': continue
+                    if match == '':
+                        continue
                     stream.append(
                         ["set", jailName, "addjournalmatch"] + shlex.split(match))
         return stream
-

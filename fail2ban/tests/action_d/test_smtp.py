@@ -32,6 +32,7 @@ from ..dummyjail import DummyJail
 
 from ..utils import CONFIG_DIR, asyncserver, Utils, uni_decode
 
+
 class TestSMTPServer(smtpd.SMTPServer):
 
 	def __init__(self, *args):
@@ -70,7 +71,8 @@ class SMTPActionTest(unittest.TestCase):
 		self.action = customActionModule.Action(
 			self.jail, "test", host="localhost:%i" % port)
 
-		## because of bug in loop (see loop in asyncserver.py) use it's loop instead of asyncore.loop:
+		# because of bug in loop (see loop in asyncserver.py)
+		# use it's loop instead of asyncore.loop:
 		self._active = True
 		self._loop_thread = threading.Thread(
 			target=asyncserver.loop, kwargs={'active': lambda: self._active})
@@ -85,7 +87,8 @@ class SMTPActionTest(unittest.TestCase):
 		super(SMTPActionTest, self).tearDown()
 
 	def _exec_and_wait(self, doaction, timeout=3, short=False):
-		if short: timeout /= 25
+		if short:
+			timeout /= 25
 		self.smtpd.ready = False
 		doaction()
 		Utils.wait_for(lambda: self.smtpd.ready, timeout)
@@ -104,7 +107,7 @@ class SMTPActionTest(unittest.TestCase):
 		self.assertEqual(self.smtpd.rcpttos, ["root"])
 		self.assertTrue(
 			"Subject: [Fail2Ban] %s: stopped" %
-				self.jail.name in self.smtpd.data)
+			self.jail.name in self.smtpd.data)
 
 	def _testBan(self, restored=False):
 		aInfo = {
@@ -118,7 +121,7 @@ class SMTPActionTest(unittest.TestCase):
 			aInfo['restored'] = 1
 
 		self._exec_and_wait(lambda: self.action.ban(aInfo), short=restored)
-		if restored: # no mail, should raises attribute error:
+		if restored:  # no mail, should raises attribute error:
 			self.assertRaises(AttributeError, lambda: self.smtpd.mailfrom)
 			return
 		self.assertEqual(self.smtpd.mailfrom, "fail2ban")
@@ -157,6 +160,7 @@ class SMTPActionTest(unittest.TestCase):
 		self.action.toaddr = "test@example.com, test2@example.com"
 		self._exec_and_wait(self.action.start)
 		self.assertEqual(self.smtpd.mailfrom, "test@example.com")
-		self.assertTrue("From: %s <%s>" %
+		self.assertTrue(
+			"From: %s <%s>" %
 			(self.action.fromname, self.action.fromaddr) in self.smtpd.data)
 		self.assertEqual(set(self.smtpd.rcpttos), set(["test@example.com", "test2@example.com"]))

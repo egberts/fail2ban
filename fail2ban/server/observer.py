@@ -33,14 +33,16 @@ from past.utils import old_div
 import threading
 from .jailthread import JailThread
 from .failmanager import FailManagerEmpty
-import os, logging, time, datetime, math, json, random
-import sys
+import logging
+import time
+import datetime
 from ..helpers import getLogger
 from .mytime import MyTime
 from .utils import Utils
 
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
+
 
 class ObserverThread(JailThread):
     """Handles observing a database, managing bad ips and ban increment.
@@ -65,18 +67,20 @@ class ObserverThread(JailThread):
     # observer is event driven and it sleep organized incremental, so sleep intervals can be shortly:
     DEFAULT_SLEEP_INTERVAL = Utils.DEFAULT_SLEEP_INTERVAL / 10
 
-    def __init__(self):
     # init thread
+    def __init__(self):
         super(ObserverThread, self).__init__(name='f2b/observer')
         # before started - idle:
         self.idle = True
-        ## Event queue
+        # Event queue
         self._queue_lock = threading.RLock()
         self._queue = []
-        ## Event, be notified if anything added to event queue
+        # Event, be notified if anything added to event queue
         self._notify = threading.Event()
-        ## Sleep for max 60 seconds, it possible to specify infinite to always sleep up to notifying via event,
-        ## but so we can later do some service "events" occurred infrequently directly in main loop of observer (not using queue)
+        # Sleep for max 60 seconds, it possible to specify infinite
+        # to always sleep up to notifying via event,
+        # but so we can later do some service "events" occurred
+        # infrequently directly in main loop of observer (not using queue)
         self.sleeptime = 60
         #
         self._timers = {}
@@ -104,10 +108,10 @@ class ObserverThread(JailThread):
     def __len__(self):
         return len(self._queue)
 
-    def __eq__(self, other): # Required for Threading
+    def __eq__(self, other):  # Required for Threading
         return False
 
-    def __hash__(self): # Required for Threading
+    def __hash__(self):  # Required for Threading
         return id(self)
 
     def add_named_timer(self, name, starttime, *event):
@@ -129,7 +133,8 @@ class ObserverThread(JailThread):
         # in testing we should wait (looping) for the possible time drifts:
         if MyTime.myTime is not None and starttime:
             # test time after short sleep:
-            t = threading.Timer(Utils.DEFAULT_SLEEP_INTERVAL, self._delayedEvent,
+            t = threading.Timer(
+                Utils.DEFAULT_SLEEP_INTERVAL, self._delayedEvent,
                 (MyTime.time() + starttime, time.time() + starttime, event)
             )
             t.start()
@@ -143,7 +148,8 @@ class ObserverThread(JailThread):
             self.add_timer(0, *event)
             return
         # repeat after short sleep:
-        t = threading.Timer(Utils.DEFAULT_SLEEP_INTERVAL, self._delayedEvent,
+        t = threading.Timer(
+            Utils.DEFAULT_SLEEP_INTERVAL, self._delayedEvent,
             (endMyTime, endTime, event)
         )
         t.start()
@@ -155,12 +161,12 @@ class ObserverThread(JailThread):
             n = self._notify
             if n:
                 n.set()
-                #n.clear()
+                # n.clear()
 
     def add(self, *event):
         """Add a event to queue and notify thread to wake up.
         """
-        ## lock and add new event to queue:
+        # lock and add new event to queue:
         with self._queue_lock:
             self._queue.append(event)
         self.pulse_notify()
@@ -168,12 +174,12 @@ class ObserverThread(JailThread):
     def add_wn(self, *event):
         """Add a event to queue withouth notifying thread to wake up.
         """
-        ## lock and add new event to queue:
+        # lock and add new event to queue:
         with self._queue_lock:
             self._queue.append(event)
 
-    def call_lambda(self, l, *args):
-        l(*args)
+    def call_lambda(self, this_lambda, *args):
+        this_lambda(*args)
 
     def run(self):
         """Main loop for Threading.
@@ -186,9 +192,9 @@ class ObserverThread(JailThread):
             True when the thread exits nicely.
         """
         logSys.info("Observer start...")
-        ## first time create named timer to purge database each hour (clean old entries) ...
+        # first time create named timer to purge database each hour (clean old entries) ...
         self.add_named_timer('DB_PURGE', self.__db_purge_interval, 'db_purge')
-        ## Mapping of all possible event types of observer:
+        # Mapping of all possible event types of observer:
         __meth = {
             # universal lambda:
             'call': self.call_lambda,
@@ -196,22 +202,22 @@ class ObserverThread(JailThread):
             'db_set': self.db_set,
             'db_purge': self.db_purge,
             # service events of observer self:
-            'is_alive' : self.isAlive,
+            'is_alive': self.isAlive,
             'is_active': self.isActive,
             'start': self.start,
             'stop': self.stop,
-            'nop': lambda:(),
-            'shutdown': lambda:()
+            'nop': lambda: (),
+            'shutdown': lambda: ()
         }
         try:
-            ## check it self with sending is_alive event
+            # check it self with sending is_alive event
             self.add('is_alive')
-            ## if we should stop - break a main loop
+            # if we should stop - break a main loop
             while self.active:
                 self.idle = False
-                ## check events available and execute all events from queue
+                # check events available and execute all events from queue
                 while not self._paused:
-                    ## lock, check and pop one from begin of queue:
+                    # lock, check and pop one from begin of queue:
                     try:
                         ev = None
                         with self._queue_lock:
@@ -219,36 +225,38 @@ class ObserverThread(JailThread):
                                 ev = self._queue.pop(0)
                         if ev is None:
                             break
-                        ## retrieve method by name
+                        # retrieve method by name
                         meth = ev[0]
-                        if not callable(ev[0]): meth = __meth.get(meth) or getattr(self, meth)
-                        ## execute it with rest of event as variable arguments
+                        if not callable(ev[0]):
+                            meth = __meth.get(meth) or getattr(self, meth)
+                        # execute it with rest of event as variable arguments
                         meth(*ev[1:])
                     except Exception as e:
-                        #logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                        # logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
                         logSys.error('%s', e, exc_info=True)
-                ## going sleep, wait for events (in queue)
+                # going sleep, wait for events (in queue)
                 n = self._notify
                 if n:
                     self.idle = True
                     n.wait(self.sleeptime)
-                    ## wake up - reset signal now (we don't need it so long as we reed from queue)
+                    # wake up - reset signal now (we don't need it so long as we reed from queue)
                     n.clear()
                     if self._paused:
                         continue
                 else:
-                    ## notify event deleted (shutdown) - just sleep a litle bit (waiting for shutdown events, prevent high cpu usage)
+                    # notify event deleted (shutdown) - just sleep a litle bit (waiting
+                    # for shutdown events, prevent high cpu usage)
                     time.sleep(ObserverThread.DEFAULT_SLEEP_INTERVAL)
-                    ## stop by shutdown and empty queue :
+                    # stop by shutdown and empty queue :
                     if not self.is_full:
                         break
-                ## end of main loop - exit
+                # end of main loop - exit
             logSys.info("Observer stopped, %s events remaining.", len(self._queue))
             self._notify = None
-            #print("Observer stopped, %s events remaining." % len(self._queue))
+            # print("Observer stopped, %s events remaining." % len(self._queue))
         except Exception as e:
             logSys.error('Observer stopped after error: %s', e, exc_info=True)
-            #print("Observer stopped with error: %s" % str(e))
+            # print("Observer stopped with error: %s" % str(e))
         # clear all events - exit, for possible calls of wait_empty:
         with self._queue_lock:
             self._queue = []
@@ -256,7 +264,7 @@ class ObserverThread(JailThread):
         return True
 
     def isAlive(self):
-        #logSys.debug("Observer alive...")
+        # logSys.debug("Observer alive...")
         return True
 
     def isActive(self, fromStr=None):
@@ -273,20 +281,22 @@ class ObserverThread(JailThread):
     def stop(self, wtime=5, forceQuit=True):
         if self.active and self._notify:
             logSys.info("Observer stop ... try to end queue %s seconds", wtime)
-            #print("Observer stop ....")
-            # just add shutdown job to make possible wait later until full (events remaining)
+            # print("Observer stop ....")
+            # just add shutdown job to make possible wait later until full
+            # (events remaining)
             with self._queue_lock:
                 self.add_wn('shutdown')
-                #don't pulse - just set, because we will delete it hereafter (sometimes not wakeup)
+                # don't pulse - just set, because we will delete it hereafter
+                # (sometimes not wakeup)
                 n = self._notify
                 self._notify.set()
-                #self.pulse_notify()
+                # self.pulse_notify()
                 self._notify = None
             # wait max wtime seconds until full (events remaining)
             if self.wait_empty(wtime) or forceQuit:
                 n.clear()
-                self.active = False; # leave outer (active) loop
-                self._paused = True; # leave inner (queue) loop
+                self.active = False  # leave outer (active) loop
+                self._paused = True  # leave inner (queue) loop
                 self.__db = None
             else:
                 self._notify = n
@@ -317,7 +327,6 @@ class ObserverThread(JailThread):
         self.wait_idle(0.001)
         return not self.is_full
 
-
     def wait_idle(self, sleeptime=None):
         """Wait observer is running and returns if observer idle (observer sleeps)
         """
@@ -334,7 +343,7 @@ class ObserverThread(JailThread):
 
     @property
     def paused(self):
-        return self._paused;
+        return self._paused
 
     @paused.setter
     def paused(self, pause):
@@ -344,16 +353,15 @@ class ObserverThread(JailThread):
         # wake after pause ended
         self.pulse_notify()
 
-
     @property
     def status(self):
         """Status of observer to be implemented. [TODO]
         """
         return ('', '')
 
-    ## -----------------------------------------
-    ## [Async] database service functionality ...
-    ## -----------------------------------------
+    # -----------------------------------------
+    # [Async] database service functionality ...
+    # -----------------------------------------
 
     def db_set(self, db):
         self.__db = db
@@ -365,9 +373,9 @@ class ObserverThread(JailThread):
         # trigger timer again ...
         self.add_named_timer('DB_PURGE', self.__db_purge_interval, 'db_purge')
 
-    ## -----------------------------------------
-    ## [Async] ban time increment functionality ...
-    ## -----------------------------------------
+    # -----------------------------------------
+    # [Async] ban time increment functionality ...
+    # -----------------------------------------
 
     def failureFound(self, failManager, jail, ticket):
         """ Notify observer a failure for ip was found
@@ -380,7 +388,8 @@ class ObserverThread(JailThread):
         ip = ticket.getIP()
         unixTime = ticket.getTime()
         logSys.debug("[%s] Observer: failure found %s", jail.name, ip)
-        # increase retry count for known (bad) ip, corresponding banCount of it (one try will count than 2, 3, 5, 9 ...)  :
+        # increase retry count for known (bad) ip, corresponding
+        # banCount of it (one try will count than 2, 3, 5, 9 ...)  :
         banCount = 0
         retryCount = 1
         timeOfBan = None
@@ -395,16 +404,20 @@ class ObserverThread(JailThread):
                     #   retryCount = maxRetry
                     break
                 retryCount = min(retryCount, maxRetry)
-                # check this ticket already known (line was already processed and in the database and will be restored from there):
+                # check this ticket already known (line was already processed and
+                # in the database and will be restored from there):
                 if timeOfBan is not None and unixTime <= timeOfBan:
-                    logSys.debug("[%s] Ignore failure %s before last ban %s < %s, restored",
-                                jail.name, ip, unixTime, timeOfBan)
+                    logSys.debug(
+                        "[%s] Ignore failure %s before last ban %s < %s, restored",
+                        jail.name, ip, unixTime, timeOfBan)
                     return
-            # for not increased failures observer should not add it to fail manager, because was already added by filter self
+            # for not increased failures observer should not add it to fail
+            # manager, because was already added by filter self
             if retryCount <= 1:
                 return
             # retry counter was increased - add it again:
-            logSys.info("[%s] Found %s, bad - %s, %s # -> %s%s", jail.name, ip,
+            logSys.info(
+                "[%s] Found %s, bad - %s, %s # -> %s%s", jail.name, ip,
                 MyTime.time2str(unixTime), banCount, retryCount,
                 (', Ban' if retryCount >= maxRetry else ''))
             # retryCount-1, because a ticket was already once incremented by filter self
@@ -414,7 +427,7 @@ class ObserverThread(JailThread):
             if retryCount >= maxRetry:
                 # perform the banning of the IP now (again)
                 # [todo]: this code part will be used multiple times - optimize it later.
-                try: # pragma: no branch - exception is the only way out
+                try:  # pragma: no branch - exception is the only way out
                     while True:
                         ticket = failManager.toBan(ip)
                         jail.putFailTicket(ticket)
@@ -422,8 +435,7 @@ class ObserverThread(JailThread):
                     failManager.cleanup(MyTime.time())
 
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
-
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     class BanTimeIncr(object):
         def __init__(self, banTime, banCount):
@@ -452,27 +464,30 @@ class ObserverThread(JailThread):
         try:
             if banTime > 0 and be.get('increment', False):
                 # search IP in database and increase time if found:
-                for banCount, timeOfBan, lastBanTime in \
-                    jail.database.getBan(ip, jail, overalljails=be.get('overalljails', False)) \
-                :
+                for banCount, timeOfBan, lastBanTime \
+                        in jail.database.getBan(
+                            ip, jail, overalljails=be.get('overalljails', False)):
                     # increment count in ticket (if still not increased from banmanager, test-cases?):
                     if banCount >= ticket.getBanCount():
                         ticket.setBanCount(banCount+1)
-                    logSys.debug('IP %s was already banned: %s #, %s', ip, banCount, timeOfBan);
+                    logSys.debug('IP %s was already banned: %s #, %s', ip, banCount, timeOfBan)
                     # calculate new ban time
                     if banCount > 0:
                         banTime = be['evformula'](self.BanTimeIncr(banTime, banCount))
                     ticket.setBanTime(banTime)
-                    # check current ticket time to prevent increasing for twice read tickets (restored from log file besides database after restart)
+                    # check current ticket time to prevent increasing for twice
+                    # read tickets (restored from log file besides database after restart)
                     if ticket.getTime() > timeOfBan:
-                        logSys.info('[%s] IP %s is bad: %s # last %s - incr %s to %s' % (jail.name, ip, banCount,
-                            MyTime.time2str(timeOfBan),
-                            datetime.timedelta(seconds=int(orgBanTime)), datetime.timedelta(seconds=int(banTime))));
+                        logSys.info(
+                            '[%s] IP %s is bad: %s # last %s - incr %s to %s' % (
+                                jail.name, ip, banCount,
+                                MyTime.time2str(timeOfBan),
+                                datetime.timedelta(seconds=int(orgBanTime)), datetime.timedelta(seconds=int(banTime))))
                     else:
                         ticket.restored = True
                     break
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
         return banTime
 
     def banFound(self, ticket, jail, btime):
@@ -481,7 +496,7 @@ class ObserverThread(JailThread):
         Observer will check ip was known (bad) and possibly increase/prolong a ban time
         Secondary we will actualize the bans and bips (bad ip) in database
         """
-        if ticket.restored: # pragma: no cover (normally not resored tickets only)
+        if ticket.restored:  # pragma: no cover (normally not resored tickets only)
             return
         try:
             oldbtime = btime
@@ -496,7 +511,8 @@ class ObserverThread(JailThread):
             # if not permanent
             if btime != -1:
                 bendtime = ticket.getTime() + btime
-                logtime = (datetime.timedelta(seconds=int(btime)),
+                logtime = (
+                    datetime.timedelta(seconds=int(btime)),
                     MyTime.time2str(bendtime))
                 # check ban is not too old :
                 if bendtime < MyTime.time():
@@ -506,7 +522,8 @@ class ObserverThread(JailThread):
                 logtime = ('permanent', 'infinite')
             # if ban time was prolonged - log again with new ban time:
             if btime != oldbtime:
-                logSys.notice("[%s] Increase Ban %s (%d # %s -> %s)", jail.name,
+                logSys.notice(
+                    "[%s] Increase Ban %s (%d # %s -> %s)", jail.name,
                     ip, ticket.getBanCount(), *logtime)
                 # delayed prolonging ticket via actions that expected this (not later than 10 sec):
                 logSys.log(5, "[%s] Observer: prolong %s in %s", jail.name, ip, (btime, oldbtime))
@@ -516,7 +533,7 @@ class ObserverThread(JailThread):
                 # add to database always only after ban time was calculated an not yet already banned:
                 jail.database.addBan(jail, ticket)
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     def prolongBan(self, ticket, jail):
         """ Notify observer a ban occured for ip
@@ -531,11 +548,13 @@ class ObserverThread(JailThread):
             # prolong ticket via actions that expected this:
             jail.actions._prolongBan(ticket)
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
+
 
 # Global observer initial created in server (could be later rewriten via singleton)
 class _Observers(object):
     def __init__(self):
         self.Main = None
+
 
 Observers = _Observers()

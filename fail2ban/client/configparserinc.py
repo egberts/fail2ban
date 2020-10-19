@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: t -*-
 # vi: set ft=python sts=4 ts=4 sw=4 noet :
 
+from future import standard_library
 # This file is part of Fail2Ban.
 #
 # Fail2Ban is free software; you can redistribute it and/or modify
@@ -20,18 +21,18 @@
 # Author: Yaroslav Halchenko
 # Modified: Cyril Jaquier
 
-from future import standard_library
-standard_library.install_aliases()
 __author__ = 'Yaroslav Halchenko, Serg G. Brester (aka sebres)'
 __copyright__ = 'Copyright (c) 2007 Yaroslav Halchenko, 2015 Serg G. Brester (aka sebres)'
 __license__ = 'GPL'
 
+from ..helpers import getLogger
 import os
 import re
 import sys
-from ..helpers import getLogger
 
-if sys.version_info >= (3,): # pragma: 2.x no cover
+
+standard_library.install_aliases()
+if sys.version_info >= (3,):  # pragma: 2.x no cover
 
     # SafeConfigParser deprecated from Python 3.2 (renamed to ConfigParser)
     from configparser import ConfigParser as SafeConfigParser, BasicInterpolation, \
@@ -63,17 +64,19 @@ if sys.version_info >= (3,): # pragma: 2.x no cover
                 return super(BasicInterpolationWithName, self)._interpolate_some(
                     parser, option, accum, rest, section, map, *args, **kwargs)
 
-else: # pragma: 3.x no cover
+else:  # pragma: 3.x no cover
     from configparser import SafeConfigParser, \
         InterpolationMissingOptionError, NoOptionError, NoSectionError
 
     # Interpolate missing known/option as option from default section
     SafeConfigParser._cp_interpolate_some = SafeConfigParser._interpolate_some
+
     def _interpolate_some(self, option, accum, rest, section, map, *args, **kwargs):
         # try to wrap section options like %(section/option)s:
         self._map_section_options(section, option, rest, map)
         return self._cp_interpolate_some(option, accum, rest, section, map, *args, **kwargs)
     SafeConfigParser._interpolate_some = _interpolate_some
+
 
 def _expandConfFilesWithLocal(filenames):
     """Expands config files with local extension.
@@ -86,11 +89,10 @@ def _expandConfFilesWithLocal(filenames):
             newFilenames.append(localname)
     return newFilenames
 
+
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
 logLevel = 7
-
-
 __all__ = ['SafeConfigParserWithIncludes']
 
 
@@ -131,7 +133,7 @@ after = 1.conf
 
     CONDITIONAL_RE = re.compile(r"^(\w+)(\?.+)$")
 
-    if sys.version_info >= (3,2):
+    if sys.version_info >= (3, 2):
         # overload constructor only for fancy new Python3's
         def __init__(self, share_config=None, *args, **kwargs):
             kwargs = kwargs.copy()
@@ -181,11 +183,11 @@ after = 1.conf
 
         Fallback: try to wrap missing default options as "default/options" resp. "known/options"
         """
-        if '/' not in rest or '%(' not in rest: # pragma: no cover
+        if '/' not in rest or '%(' not in rest:  # pragma: no cover
             return 0
         rplcmnt = 0
         soptrep = SafeConfigParserWithIncludes.SECTION_OPTSUBST_CRE.findall(rest)
-        if not soptrep: # pragma: no cover
+        if not soptrep:  # pragma: no cover
             return 0
         for sopt, opt in soptrep:
             if sopt not in defaults:
@@ -206,10 +208,10 @@ after = 1.conf
                             # if section not found - ignore:
                             try:
                                 sec = self._sections[sec]
-                            except KeyError: # pragma: no cover
+                            except KeyError:  # pragma: no cover
                                 continue
                             v = sec[opt]
-                        except KeyError: # pragma: no cover
+                        except KeyError:  # pragma: no cover
                             # fallback to default:
                             usedef = 1
                 else:
@@ -217,17 +219,17 @@ after = 1.conf
                 if usedef:
                     try:
                         v = self._defaults[opt]
-                    except KeyError: # pragma: no cover
+                    except KeyError:  # pragma: no cover
                         continue
                 # replacement found:
                 rplcmnt = 1
-                try: # set it in map-vars (consider different python versions):
+                try:  # set it in map-vars (consider different python versions):
                     defaults[sopt] = v
                 except:
                     # try to set in first default map (corresponding vars):
                     try:
                         defaults._maps[0][sopt] = v
-                    except: # pragma: no cover
+                    except:  # pragma: no cover
                         # no way to update vars chain map - overwrite defaults:
                         self._defaults[sopt] = v
         return rplcmnt
@@ -257,7 +259,7 @@ after = 1.conf
 
     def _getIncludes(self, filenames, seen=[]):
         if not isinstance(filenames, list):
-            filenames = [ filenames ]
+            filenames = [filenames]
         filenames = _expandConfFilesWithLocal(filenames)
         # retrieve or cache include paths:
         if self._cfg_share:
@@ -293,7 +295,7 @@ after = 1.conf
 
         resourceDir = os.path.dirname(resource)
 
-        newFiles = [ ('before', []), ('after', []) ]
+        newFiles = [('before', []), ('after', [])]
         if SCPWI.SECTION_NAME in parser.sections():
             for option_name, option_list in newFiles:
                 if option_name in parser.options(SCPWI.SECTION_NAME):
@@ -323,7 +325,7 @@ after = 1.conf
         """
         try:
             opts = self._sections[section]
-        except KeyError: # pragma: no cover
+        except KeyError:  # pragma: no cover
             raise NoSectionError(section)
         if withDefault:
             # mix it with defaults:
@@ -333,7 +335,7 @@ after = 1.conf
 
     def read(self, filenames, get_includes=True):
         if not isinstance(filenames, list):
-            filenames = [ filenames ]
+            filenames = [filenames]
         # retrieve (and cache) includes:
         fileNamesFull = []
         if get_includes:
@@ -374,7 +376,8 @@ after = 1.conf
                         s2 = alls.get(n)
                         if isinstance(s2, dict):
                             # save previous known values, for possible using in local interpolations later:
-                            self.merge_section('KNOWN/'+n,
+                            self.merge_section(
+                                'KNOWN/'+n,
                                 dict([i for i in iter(list(s2.items())) if i[0] in s]), '')
                             # merge section
                             s2.update(s)
@@ -387,7 +390,7 @@ after = 1.conf
         if logSys.getEffectiveLevel() <= logLevel:
             logSys.log(logLevel, "    Reading file: %s", fileNamesFull[0])
         # read file(s) :
-        if sys.version_info >= (3,2): # pragma: no cover
+        if sys.version_info >= (3, 2):   # pragma: no cover
             return SafeConfigParser.read(self, fileNamesFull, encoding='utf-8')
         else:
             return SafeConfigParser.read(self, fileNamesFull)
@@ -406,4 +409,3 @@ after = 1.conf
             if not k.startswith(pref) and k != '__name__':
                 sk[pref+k] = v
         sec.update(sk)
-

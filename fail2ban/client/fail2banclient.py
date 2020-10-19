@@ -46,12 +46,14 @@ PROMPT = "fail2ban> "
 def _thread_name():
     return threading.current_thread().__class__.__name__
 
-def input_command(): # pragma: no cover
+
+def input_command():  # pragma: no cover
     return input(PROMPT)
 
 ##
 #
 # @todo This class needs cleanup.
+
 
 class Fail2banClient(Fail2banCmdLine, Thread):
 
@@ -67,7 +69,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
         output("and bans the corresponding IP addresses using firewall rules.")
         output("")
 
-    def __sigTERMhandler(self, signum, frame): # pragma: no cover
+    def __sigTERMhandler(self, signum, frame):  # pragma: no cover
         # Print a new line because we probably come from wait
         output("")
         logSys.warning("Caught signal %d. Exiting" % signum)
@@ -75,7 +77,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
 
     def __ping(self, timeout=0.1):
         return self.__processCmd([["ping"] + ([timeout] if timeout != -1 else [])],
-            False, timeout=float(timeout))
+                                 False, timeout=float(timeout))
 
     @property
     def beautifier(self):
@@ -115,7 +117,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
                         else:
                             logSys.log(5, " -- %s failed -- %r", c, e)
                     return False
-                except Exception as e: # pragma: no cover
+                except Exception as e:  # pragma: no cover
                     if showRet or self._conf["verbose"] > 1:
                         if self._conf["verbose"] > 1:
                             logSys.exception(e)
@@ -125,9 +127,9 @@ class Fail2banClient(Fail2banCmdLine, Thread):
         finally:
             # prevent errors by close during shutdown (on exit command):
             if client:
-                try :
+                try:
                     client.close()
-                except Exception as e: # pragma: no cover
+                except Exception as e:  # pragma: no cover
                     if showRet or self._conf["verbose"] > 1:
                         logSys.debug(e)
             if showRet or c[0] in ('echo', 'server-status'):
@@ -136,7 +138,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
 
     def __logSocketError(self, prevError="", errorOnly=False):
         try:
-            if os.access(self._conf["socket"], os.F_OK): # pragma: no cover
+            if os.access(self._conf["socket"], os.F_OK):  # pragma: no cover
                 # This doesn't check if path is a socket,
                 #  but socket.error should be raised
                 if os.access(self._conf["socket"], os.W_OK):
@@ -145,7 +147,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
                         logSys.error(prevError)
                     else:
                         logSys.error("%sUnable to contact server. Is it running?",
-                            ("[%s] " % prevError) if prevError else '')
+                                     ("[%s] " % prevError) if prevError else '')
                 else:
                     logSys.error("Permission denied to socket: %s,"
                                  " (you must be root)", self._conf["socket"])
@@ -153,7 +155,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
                 logSys.error("Failed to access socket path: %s."
                              " Is fail2ban running?",
                              self._conf["socket"])
-        except Exception as e: # pragma: no cover
+        except Exception as e:  # pragma: no cover
             logSys.error("Exception while checking socket access: %s",
                          self._conf["socket"])
             logSys.error(e)
@@ -202,9 +204,9 @@ class Fail2banClient(Fail2banCmdLine, Thread):
                 # Start server direct here in main thread (not fork):
                 self._server = Fail2banServer.startServerDirect(self._conf, False)
 
-        except ExitException: # pragma: no cover
+        except ExitException:  # pragma: no cover
             pass
-        except Exception as e: # pragma: no cover
+        except Exception as e:  # pragma: no cover
             output("")
             logSys.error("Exception while starting server " + ("background" if background else "foreground"))
             if self._conf["verbose"] > 1:
@@ -270,7 +272,7 @@ class Fail2banClient(Fail2banCmdLine, Thread):
             if self._conf.get("interactive", False):
                 output('  ## stop ... ')
             self.__processCommand(['stop'])
-            if not self.__waitOnServer(False): # pragma: no cover
+            if not self.__waitOnServer(False):  # pragma: no cover
                 logSys.error("Could not stop server")
                 return False
             # in interactive mode reset config, to make full-reload if there something changed:
@@ -321,16 +323,15 @@ class Fail2banClient(Fail2banCmdLine, Thread):
         else:
             return self.__processCmd([cmd])
 
-
     def __processStartStreamAfterWait(self, *args):
         try:
             # Wait for the server to start
-            if not self.__waitOnServer(): # pragma: no cover
+            if not self.__waitOnServer():  # pragma: no cover
                 logSys.error("Could not find server, waiting failed")
                 return False
                 # Configure the server
             self.__processCmd(*args)
-        except ServerExecutionException as e: # pragma: no cover
+        except ServerExecutionException as e:  # pragma: no cover
             if self._conf["verbose"] > 1:
                 logSys.exception(e)
             logSys.error("Could not start server. Maybe an old "
@@ -411,12 +412,12 @@ class Fail2banClient(Fail2banCmdLine, Thread):
                             elif not cmd == "":
                                 try:
                                     self.__processCommand(shlex.split(cmd))
-                                except Exception as e: # pragma: no cover
+                                except Exception as e:  # pragma: no cover
                                     if self._conf["verbose"] > 1:
                                         logSys.exception(e)
                                     else:
                                         logSys.error(e)
-                except (EOFError, KeyboardInterrupt): # pragma: no cover
+                except (EOFError, KeyboardInterrupt):  # pragma: no cover
                     output("")
                     raise
             # Single command mode
@@ -442,14 +443,18 @@ class _VisualWait(object):
     """
     pos = 0
     delta = 1
+
     def __init__(self, maxpos=10):
         self.maxpos = maxpos
+
     def __enter__(self):
         return self
+
     def __exit__(self, *args):
         if self.pos:
             sys.stdout.write('\r'+(' '*(35+self.maxpos))+'\r')
             sys.stdout.flush()
+
     def heartbeat(self):
         """Show or step for progress indicator
         """
@@ -466,15 +471,20 @@ class _VisualWait(object):
             self.delta = -1
         elif self.pos < 2:
             self.delta = 1
+
+
 class _NotVisualWait(object):
     """Mockup for invisible progress indication (not verbose)
     """
     def __enter__(self):
         return self
+
     def __exit__(self, *args):
         pass
+
     def heartbeat(self):
         pass
+
 
 def VisualWait(verbose, *args, **kwargs):
     """Wonderful visual progress indication (if verbose)
@@ -489,4 +499,3 @@ def exec_command_line(argv):
         exit(0)
     else:
         exit(255)
-

@@ -56,7 +56,7 @@ class FilterPoll(FileFilter):
     def __init__(self, jail):
         FileFilter.__init__(self, jail)
         self.__modified = False
-        ## The time of the last modification of the file.
+        # The time of the last modification of the file.
         self.__prevStats = dict()
         self.__file404Cnt = dict()
         logSys.debug("Created FilterPoll")
@@ -102,16 +102,18 @@ class FilterPoll(FileFilter):
                     logSys.log(4, "Woke up idle=%s with %d files monitored",
                                self.idle, self.getLogCount())
                 if self.idle:
-                    if not Utils.wait_for(lambda: not self.active or not self.idle,
-                        self.sleeptime * 10, self.sleeptime
+                    if not Utils.wait_for(
+                            lambda: not self.active or not self.idle,
+                            self.sleeptime * 10, self.sleeptime
                     ):
                         self.ticks += 1
                         continue
                 # Get file modification
                 modlst = []
-                Utils.wait_for(lambda: not self.active or self.getModified(modlst),
+                Utils.wait_for(
+                    lambda: not self.active or self.getModified(modlst),
                     self.sleeptime)
-                if not self.active: # pragma: no cover - timing
+                if not self.active:  # pragma: no cover - timing
                     break
                 for filename in modlst:
                     self.getFailures(filename)
@@ -119,14 +121,15 @@ class FilterPoll(FileFilter):
 
                 self.ticks += 1
                 if self.__modified:
-                    if not self.banASAP: # pragma: no cover
+                    if not self.banASAP:  # pragma: no cover
                         self.performBan()
                     self.__modified = False
-            except Exception as e: # pragma: no cover
-                if not self.active: # if not active - error by stop...
+            except Exception as e:  # pragma: no cover
+                if not self.active:  # if not active - error by stop...
                     break
-                logSys.error("Caught unhandled exception in main cycle: %r", e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                logSys.error(
+                    "Caught unhandled exception in main cycle: %r", e,
+                    exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
                 # incr common error counter:
                 self.commonError()
         logSys.debug("[%s] filter terminated", self.jailName)
@@ -163,12 +166,14 @@ class FilterPoll(FileFilter):
             # log error:
             if self.__file404Cnt[filename] < 2:
                 if e.errno == 2:
-                    logSys.debug("Log absence detected (possibly rotation) for %s, reason: %s",
-                             filename, e)
-                else: # pragma: no cover
-                    logSys.error("Unable to get stat on %s because of: %s",
-                             filename, e,
-                             exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                    logSys.debug(
+                        "Log absence detected (possibly rotation) for %s, reason: %s",
+                        filename, e)
+                else:  # pragma: no cover
+                    logSys.error(
+                        "Unable to get stat on %s because of: %s",
+                        filename, e,
+                        exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
             # increase file and common error counters:
             self.__file404Cnt[filename] += 1
             self.commonError()

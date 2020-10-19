@@ -71,7 +71,7 @@ class DummyJail(Jail):
 
 	@property
 	def idle(self):
-		return False;
+		return False
 	
 	@idle.setter
 	def idle(self, value):
@@ -79,7 +79,7 @@ class DummyJail(Jail):
 
 	@property
 	def actions(self):
-		return self.__actions;
+		return self.__actions
 
 	def isAlive(self):
-		return True;
+		return True

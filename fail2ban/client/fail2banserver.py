@@ -28,6 +28,7 @@ from .fail2bancmdline import Fail2banCmdLine, ServerExecutionException, \
 
 SERVER = "fail2ban-server"
 
+
 ##
 # \mainpage Fail2Ban
 #
@@ -55,7 +56,7 @@ class Fail2banServer(Fail2banCmdLine):
 			server.start(conf["socket"],
 							conf["pidfile"], conf["force"],
 							conf=conf)
-		except Exception as e: # pragma: no cover
+		except Exception as e:  # pragma: no cover
 			try:
 				if server:
 					server.quit()
@@ -76,7 +77,7 @@ class Fail2banServer(Fail2banCmdLine):
 		# Forks the current process, don't fork if async specified (ex: test cases)
 		pid = 0
 		frk = not conf["async"] and PRODUCTION
-		if frk: # pragma: no cover
+		if frk:  # pragma: no cover
 			pid = os.fork()
 		logSys.debug("  async starting of server in %s, fork: %s - %s", os.getpid(), frk, pid)
 		if pid == 0:
@@ -109,29 +110,31 @@ class Fail2banServer(Fail2banCmdLine):
 					exe = sys.executable
 					args[0:0] = [exe]
 				logSys.debug("Starting %r with args %r", exe, args)
-				if frk: # pragma: no cover
+				if frk:  # pragma: no cover
 					os.execv(exe, args)
 				else:
-					# use P_WAIT instead of P_NOWAIT (to prevent defunct-zomby process), it startet as daemon, so parent exit fast after fork):
+					# use P_WAIT instead of P_NOWAIT (to prevent defunct-zomby
+					# process), it startet as daemon, so parent exit fast after fork):
 					ret = os.spawnv(os.P_WAIT, exe, args)
-					if ret != 0: # pragma: no cover
+					if ret != 0:  # pragma: no cover
 						raise OSError(ret, "Unknown error by executing server %r with %r" % (args[1], exe))
-			except OSError as e: # pragma: no cover
-				if not frk: #not PRODUCTION:
+			except OSError as e:  # pragma: no cover
+				if not frk:
+					# not PRODUCTION:
 					raise
 				# Use the PATH env.
 				logSys.warning("Initial start attempt failed (%s). Starting %r with the same args", e, SERVER)
-				if frk: # pragma: no cover
+				if frk:  # pragma: no cover
 					os.execvp(SERVER, args)
 
 	@staticmethod
 	def getServerPath():
 		startdir = sys.path[0]
 		exe = os.path.abspath(os.path.join(startdir, SERVER))
-		if not os.path.isfile(exe): # may be unresolved in test-cases, so get relative starter (client):
+		if not os.path.isfile(exe):  # may be unresolved in test-cases, so get relative starter (client):
 			startdir = os.path.dirname(sys.argv[0])
 			exe = os.path.abspath(os.path.join(startdir, SERVER))
-			if not os.path.isfile(exe): # may be unresolved in test-cases, so try to get relative bin-directory:
+			if not os.path.isfile(exe):  # may be unresolved in test-cases, so try to get relative bin-directory:
 				startdir = os.path.dirname(os.path.abspath(__file__))
 				startdir = os.path.join(os.path.dirname(os.path.dirname(startdir)), "bin")
 				exe = os.path.abspath(os.path.join(startdir, SERVER))
@@ -187,6 +190,7 @@ class Fail2banServer(Fail2banCmdLine):
 				logSys.log(5, '  server phase %s', phase)
 				if not phase.get('start', False):
 					raise ServerExecutionException('Async configuration of server failed')
+
 				# event for server ready flag:
 				def _server_ready():
 					phase['start-ready'] = True
@@ -201,7 +205,7 @@ class Fail2banServer(Fail2banCmdLine):
 			if not nonsync:
 				_server_ready()
 			# If forked - just exit other processes
-			if pid != os.getpid(): # pragma: no cover
+			if pid != os.getpid():  # pragma: no cover
 				os._exit(0)
 			if cli:
 				cli._server = server
@@ -210,7 +214,7 @@ class Fail2banServer(Fail2banCmdLine):
 			if not nonsync and cli:
 				Utils.wait_for(lambda: phase.get('done', None) is not None, self._conf["timeout"], 0.001)
 				if not phase.get('done', False):
-					if server: # pragma: no cover
+					if server:  # pragma: no cover
 						server.quit()
 					exit(255)
 				if background:
@@ -221,17 +225,18 @@ class Fail2banServer(Fail2banCmdLine):
 				logSys.exception(e)
 			else:
 				logSys.error(e)
-			if server: # pragma: no cover
+			if server:  # pragma: no cover
 				server.quit()
 			exit(255)
 
 		return True
 
 	@staticmethod
-	def exit(code=0): # pragma: no cover
+	def exit(code=0):  # pragma: no cover
 		if code != 0:
 			logSys.error("Could not start %s", SERVER)
 		exit(code)
+
 
 def exec_command_line(argv):
 	server = Fail2banServer()

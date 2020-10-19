@@ -39,4 +39,4 @@ def updatePyExec(bindir, executable=None):
 		os.symlink(executable, pypath)
 	# extend current environment path (e.g. if fail2ban not yet installed):
 	if bindir not in os.environ["PATH"].split(os.pathsep):
-		os.environ["PATH"] = os.environ["PATH"] + os.pathsep + bindir;
+		os.environ["PATH"] = os.environ["PATH"] + os.pathsep + bindir

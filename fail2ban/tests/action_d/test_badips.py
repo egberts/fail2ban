@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from future import standard_library
-standard_library.install_aliases()
+
 from builtins import str
 
 import os
@@ -33,22 +33,27 @@ from ..actiontestcase import CallingMap
 from ..dummyjail import DummyJail
 from ..servertestcase import IPAddr
 from ..utils import LogCaptureTestCase, CONFIG_DIR
+standard_library.install_aliases()
+
 
 def skip_if_not_available(f):
     """Helper to decorate tests to skip in case of timeout/http-errors like "502 bad gateway".
     """
+
     @wraps(f)
     def wrapper(self, *args):
         try:
             return f(self, *args)
-        except (SSLError, HTTPError, URLError, timeout) as e: # pragma: no cover - timeout/availability issues
+        except (SSLError, HTTPError, URLError, timeout) as e:  # pragma: no cover - timeout/availability issues
             if not isinstance(e, timeout) and 'timed out' not in str(e):
                 if not hasattr(e, 'code') or e.code > 200 and e.code <= 404:
                     raise
             raise unittest.SkipTest('Skip test because of %s' % e)
+
     return wrapper
 
-if sys.version_info >= (2,7): # pragma: no cover - may be unavailable
+
+if sys.version_info >= (2, 7):  # pragma: no cover - may be unavailable
     class BadIPsActionTest(LogCaptureTestCase):
 
         available = True, None
@@ -74,19 +79,21 @@ if sys.version_info >= (2,7): # pragma: no cover - may be unavailable
                         BadIPsActionTest.pythonModule = self.jail.actions._load_python_module(pythonModuleName)
                     BadIPsActionTest.modAction = BadIPsActionTest.pythonModule.Action
                     self.jail.actions._load_python_module(pythonModuleName)
-                BadIPsActionTest.available = BadIPsActionTest.modAction.isAvailable(timeout=2 if unittest.F2B.fast else 30)
+                BadIPsActionTest.available = BadIPsActionTest.modAction.isAvailable(
+                    timeout=2 if unittest.F2B.fast else 30)
             if not BadIPsActionTest.available[0]:
-                raise unittest.SkipTest('Skip test because service is not available: %s' % BadIPsActionTest.available[1])
+                raise unittest.SkipTest(
+                    'Skip test because service is not available: %s' % BadIPsActionTest.available[1])
 
             self.jail.actions.add("badips", pythonModuleName, initOpts={
                 'category': "ssh",
                 'banaction': "test",
                 'age': "2w",
                 'score': 5,
-                #'key': "fail2ban-test-suite",
-                #'bankey': "fail2ban-test-suite",
+                # 'key': "fail2ban-test-suite",
+                # 'bankey': "fail2ban-test-suite",
                 'timeout': (3 if unittest.F2B.fast else 60),
-                })
+            })
             self.action = self.jail.actions["badips"]
 
         def tearDown(self):
@@ -138,7 +145,7 @@ if sys.version_info >= (2,7): # pragma: no cover - may be unavailable
         def testStartStop(self):
             self.action.start()
             self.assertTrue(len(self.action._bannedips) > 10,
-                "%s is fewer as 10: %r" % (len(self.action._bannedips), self.action._bannedips))
+                            "%s is fewer as 10: %r" % (len(self.action._bannedips), self.action._bannedips))
             self.action.stop()
             self.assertTrue(len(self.action._bannedips) == 0)
 

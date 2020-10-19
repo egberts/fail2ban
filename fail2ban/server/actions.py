@@ -27,9 +27,6 @@ __license__ = "GPL"
 from builtins import filter
 
 import logging
-import os
-import sys
-import time
 from collections import Mapping
 try:
     from collections import OrderedDict
@@ -79,30 +76,29 @@ class Actions(JailThread, Mapping):
 
     def __init__(self, jail):
         JailThread.__init__(self, name="f2b/a."+jail.name)
-        ## The jail which contains this action.
+        # The jail which contains this action.
         self._jail = jail
         self._actions = OrderedDict()
-        ## The ban manager.
+        # The ban manager.
         self.__banManager = BanManager()
         self.banEpoch = 0
         self.__lastConsistencyCheckTM = 0
-        ## Precedence of ban (over unban), so max number of tickets banned (to call an unban check):
+        # Precedence of ban (over unban), so max number of tickets banned (to call an unban check):
         self.banPrecedence = 10
-        ## Max count of outdated tickets to unban per each __checkUnBan operation:
+        # Max count of outdated tickets to unban per each __checkUnBan operation:
         self.unbanMaxCount = self.banPrecedence * 2
 
     @staticmethod
     def _load_python_module(pythonModule):
         mod = Utils.load_python_module(pythonModule)
-        if not hasattr(mod, "Action"): # pragma: no cover
+        if not hasattr(mod, "Action"):  # pragma: no cover
             raise RuntimeError(
                 "%s module does not have 'Action' class" % pythonModule)
-        elif not issubclass(mod.Action, ActionBase): # pragma: no cover
+        elif not issubclass(mod.Action, ActionBase):  # pragma: no cover
             raise RuntimeError(
                 "%s module %s does not implement required methods" % (
                     pythonModule, mod.Action.__name__))
         return mod
-
 
     def add(self, name, pythonModule=None, initOpts=None, reload=False):
         """Adds a new action.
@@ -142,7 +138,7 @@ class Actions(JailThread, Mapping):
                     action.clearAllParams()
                     self._reload_actions[name] = initOpts
                 return
-        ## Create new action:
+        # Create new action:
         if pythonModule is None:
             action = CommandAction(self._jail, name)
         else:
@@ -163,7 +159,7 @@ class Actions(JailThread, Mapping):
                         self._actions[name].reload(**(initOpts if initOpts else {}))
                 # remove obsolete actions (untouched by reload process):
                 delacts = OrderedDict((name, action) for name, action in list(self._actions.items())
-                    if name not in self._reload_actions)
+                                      if name not in self._reload_actions)
                 if len(delacts):
                     # unban all tickets using removed actions only:
                     self.__flushBan(db=False, actions=delacts, stop=True)
@@ -189,10 +185,10 @@ class Actions(JailThread, Mapping):
     def __len__(self):
         return len(self._actions)
 
-    def __eq__(self, other): # Required for Threading
+    def __eq__(self, other):  # Required for Threading
         return False
 
-    def __hash__(self): # Required for Threading
+    def __hash__(self):  # Required for Threading
         return id(self)
 
     ##
@@ -289,7 +285,7 @@ class Actions(JailThread, Mapping):
             # Multiple IPs by subnet or dns:
             if not isinstance(ip, IPAddr):
                 ipa = IPAddr(ip)
-                if not ipa.isSingle: # subnet (mask/cidr) or raw (may be dns/hostname):
+                if not ipa.isSingle:  # subnet (mask/cidr) or raw (may be dns/hostname):
                     ips = list(filter(ipa.contains, self.__banManager.getBanList()))
                     if ips:
                         return self.removeBannedIP(ips, db, ifexists)
@@ -300,7 +296,6 @@ class Actions(JailThread, Mapping):
                 return 0
             raise ValueError(msg)
         return 1
-
 
     def stopActions(self, actions=None):
         """Stops the actions in reverse sequence (optionally filtered)
@@ -314,11 +309,10 @@ class Actions(JailThread, Mapping):
                 action.stop()
             except Exception as e:
                 logSys.error("Failed to stop jail '%s' action '%s': %s",
-                    self._jail.name, name, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                             self._jail.name, name, e,
+                             exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
             del self._actions[name]
             logSys.debug("%s: action %s terminated", self._jail.name, name)
-
 
     def run(self):
         """Main loop for Threading.
@@ -337,13 +331,13 @@ class Actions(JailThread, Mapping):
                 action.start()
             except Exception as e:
                 logSys.error("Failed to start jail '%s' action '%s': %s",
-                    self._jail.name, name, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                             self._jail.name, name, e,
+                             exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
         while self.active:
             if self.idle:
                 logSys.debug("Actions: enter idle mode")
                 Utils.wait_for(lambda: not self.active or not self.idle,
-                    lambda: False, self.sleeptime)
+                               lambda: False, self.sleeptime)
                 logSys.debug("Actions: leave idle mode")
                 continue
             # wait for ban (stop if gets inactive):
@@ -368,27 +362,27 @@ class Actions(JailThread, Mapping):
         CM_REPR_ITEMS = ("fid", "raw-ticket")
 
         AI_DICT = {
-            "ip":               lambda self: self.__ticket.getIP(),
-            "family":   lambda self: self['ip'].familyStr,
-            "ip-rev":       lambda self: self['ip'].getPTR(''),
-            "ip-host":  lambda self: self['ip'].getHost(),
-            "fid":          lambda self: self.__ticket.getID(),
+            "ip": lambda self: self.__ticket.getIP(),
+            "family": lambda self: self['ip'].familyStr,
+            "ip-rev": lambda self: self['ip'].getPTR(''),
+            "ip-host": lambda self: self['ip'].getHost(),
+            "fid": lambda self: self.__ticket.getID(),
             "failures": lambda self: self.__ticket.getAttempt(),
-            "time":         lambda self: self.__ticket.getTime(),
-            "bantime":  lambda self: self._getBanTime(),
-            "bancount":  lambda self: self.__ticket.getBanCount(),
-            "matches":  lambda self: "\n".join(self.__ticket.getMatches()),
+            "time": lambda self: self.__ticket.getTime(),
+            "bantime": lambda self: self._getBanTime(),
+            "bancount": lambda self: self.__ticket.getBanCount(),
+            "matches": lambda self: "\n".join(self.__ticket.getMatches()),
             # to bypass actions, that should not be executed for restored tickets
             "restored": lambda self: (1 if self.__ticket.restored else 0),
             # extra-interpolation - all match-tags (captured from the filter):
-            "F-*":          lambda self, tag=None: self.__ticket.getData(tag),
+            "F-*": lambda self, tag=None: self.__ticket.getData(tag),
             # merged info:
-            "ipmatches":            lambda self: "\n".join(self._mi4ip(True).getMatches()),
-            "ipjailmatches":    lambda self: "\n".join(self._mi4ip().getMatches()),
-            "ipfailures":           lambda self: self._mi4ip(True).getAttempt(),
-            "ipjailfailures":   lambda self: self._mi4ip().getAttempt(),
+            "ipmatches": lambda self: "\n".join(self._mi4ip(True).getMatches()),
+            "ipjailmatches": lambda self: "\n".join(self._mi4ip().getMatches()),
+            "ipfailures": lambda self: self._mi4ip(True).getAttempt(),
+            "ipjailfailures": lambda self: self._mi4ip().getAttempt(),
             # raw ticket info:
-            "raw-ticket":           lambda self: repr(self.__ticket)
+            "raw-ticket": lambda self: repr(self.__ticket)
         }
 
         __slots__ = CallingMap.__slots__ + ('__ticket', '__jail', '__mi4ip')
@@ -400,12 +394,13 @@ class Actions(JailThread, Mapping):
             self.immutable = immutable
             self.data = data
 
-        def copy(self): # pragma: no cover
+        def copy(self):  # pragma: no cover
             return self.__class__(self.__ticket, self.__jail, self.immutable, self.data.copy())
 
         def _getBanTime(self):
             btime = self.__ticket.getBanTime()
-            if btime is None: btime = self.__jail.actions.getBanTime()
+            if btime is None:
+                btime = self.__jail.actions.getBanTime()
             return int(btime)
 
         def _mi4ip(self, overalljails=False):
@@ -437,7 +432,7 @@ class Actions(JailThread, Mapping):
                 jail = self.__jail
                 ip = self['ip']
                 mi[idx] = None
-                if not jail.database: # pragma: no cover
+                if not jail.database:  # pragma: no cover
                     return self.__ticket
                 if overalljails:
                     mi[idx] = jail.database.getBansMerged(ip=ip)
@@ -447,9 +442,8 @@ class Actions(JailThread, Mapping):
                 logSys.error(
                     "Failed to get %s bans merged, jail '%s': %s",
                     idx, jail.name, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                    exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
             return mi[idx] if mi[idx] is not None else self.__ticket
-
 
     def __getActionInfo(self, ticket):
         aInfo = Actions.ActionInfo(ticket, self._jail)
@@ -489,7 +483,8 @@ class Actions(JailThread, Mapping):
             reason = {}
             if self.__banManager.addBanTicket(bTicket, reason=reason):
                 cnt += 1
-                # report ticket to observer, to check time should be increased and hereafter observer writes ban to database (asynchronous)
+                # report ticket to observer, to check time should be
+                # increased and hereafter observer writes ban to database (asynchronous)
                 if Observers.Main is not None and not bTicket.restored:
                     Observers.Main.add('banFound', bTicket, self._jail, btime)
                 logSys.notice("[%s] %sBan %s", self._jail.name, ('' if not bTicket.restored else 'Restore '), ip)
@@ -498,17 +493,18 @@ class Actions(JailThread, Mapping):
                     try:
                         if bTicket.restored and getattr(action, 'norestored', False):
                             continue
-                        if not aInfo.immutable: aInfo.reset()
+                        if not aInfo.immutable:
+                            aInfo.reset()
                         action.ban(aInfo)
                     except Exception as e:
                         logSys.error(
                             "Failed to execute ban jail '%s' action '%s' "
                             "info '%r': %s",
                             self._jail.name, name, aInfo, e,
-                            exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                            exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
                 # after all actions are processed set banned flag:
                 bTicket.banned = True
-                if self.banEpoch: # be sure tickets always have the same ban epoch (default 0):
+                if self.banEpoch:  # be sure tickets always have the same ban epoch (default 0):
                     bTicket.banEpoch = self.banEpoch
             else:
                 if reason.get('expired', 0):
@@ -520,12 +516,14 @@ class Actions(JailThread, Mapping):
                     # compare time of failure occurrence with time ticket was really banned:
                     diftm = ticket.getTime() - bTicket.getTime()
                     # log already banned with following level:
-                    #   DEBUG   - before 3 seconds - certain interval for it, because of possible latency by recognizing in backends, etc.
-                    #   NOTICE  - before 60 seconds - may still occur if action is slow, or very high load in backend,
-                    #   WARNING - after 60 seconds - very long time, something may be wrong
-                    ll = logging.DEBUG   if diftm < 3 \
-                    else logging.NOTICE  if diftm < 60 \
-                    else logging.WARNING
+                    #     DEBUG   - before 3 seconds - certain interval for it, because
+                    #               of possible latency by recognizing in backends, etc.
+                    #     NOTICE  - before 60 seconds - may still occur if action
+                    #               is slow, or very high load in backend,
+                    #     WARNING - after 60 seconds - very long time, something may be wrong
+                    ll = logging.DEBUG if diftm < 3 \
+                        else logging.NOTICE if diftm < 60 \
+                        else logging.WARNING
                     logSys.log(ll, "[%s] %s already banned", self._jail.name, ip)
                     # if long time after ban - do consistency check (something is wrong here):
                     if bTicket.banEpoch == self.banEpoch and diftm > 3:
@@ -536,17 +534,18 @@ class Actions(JailThread, Mapping):
                             self.__lastConsistencyCheckTM = MyTime.time()
                     # check epoch in order to reban it:
                     if bTicket.banEpoch < self.banEpoch:
-                        if not rebanacts: rebanacts = dict(
-                            (name, action) for name, action in list(self._actions.items())
+                        if not rebanacts:
+                            rebanacts = dict(
+                                (name, action) for name, action in list(self._actions.items())
                                 if action.banEpoch > bTicket.banEpoch)
                         cnt += self.__reBan(bTicket, actions=rebanacts)
-                else: # pragma: no cover - unexpected: ticket is not banned for some reasons - reban using all actions:
+                else:  # pragma: no cover - unexpected: ticket is not banned for some reasons - reban using all actions:
                     cnt += self.__reBan(bTicket)
             # add ban to database moved to observer (should previously check not already banned
             # and increase ticket time if "bantime.increment" set)
         if cnt:
             logSys.debug("Banned %s / %s, %s ticket(s) in %r", cnt,
-                self.__banManager.getBanTotal(), self.__banManager.size(), self._jail.name)
+                         self.__banManager.getBanTotal(), self.__banManager.size(), self._jail.name)
         return cnt
 
     def __reBan(self, ticket, actions=None, log=True):
@@ -564,29 +563,34 @@ class Actions(JailThread, Mapping):
         ip = ticket.getIP()
         aInfo = self.__getActionInfo(ticket)
         if log:
-            logSys.notice("[%s] Reban %s%s", self._jail.name, aInfo["ip"], (', action %r' % list(actions.keys())[0] if len(actions) == 1 else ''))
+            logSys.notice("[%s] Reban %s%s",
+                          self._jail.name,
+                          aInfo["ip"],
+                          (', action %r' % list(actions.keys())[0] if len(actions) == 1 else ''))
         for name, action in list(actions.items()):
             try:
                 logSys.debug("[%s] action %r: reban %s", self._jail.name, name, ip)
-                if not aInfo.immutable: aInfo.reset()
+                if not aInfo.immutable:
+                    aInfo.reset()
                 action.reban(aInfo)
             except Exception as e:
                 logSys.error(
                     "Failed to execute reban jail '%s' action '%s' "
                     "info '%r': %s",
                     self._jail.name, name, aInfo, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                    exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
                 return 0
         # after all actions are processed set banned flag:
         ticket.banned = True
-        if self.banEpoch: # be sure tickets always have the same ban epoch (default 0):
+        if self.banEpoch:  # be sure tickets always have the same ban epoch (default 0):
             ticket.banEpoch = self.banEpoch
         return 1
 
     def _prolongBan(self, ticket):
         # prevent to prolong ticket that was removed in-between,
         # if it in ban list - ban time already prolonged (and it stays there):
-        if not self.__banManager._inBanList(ticket): return
+        if not self.__banManager._inBanList(ticket):
+            return
         # do actions :
         aInfo = None
         for name, action in list(self._actions.items()):
@@ -597,14 +601,15 @@ class Actions(JailThread, Mapping):
                     continue
                 if aInfo is None:
                     aInfo = self.__getActionInfo(ticket)
-                if not aInfo.immutable: aInfo.reset()
+                if not aInfo.immutable:
+                    aInfo.reset()
                 action.prolong(aInfo)
             except Exception as e:
                 logSys.error(
                     "Failed to execute ban jail '%s' action '%s' "
                     "info '%r': %s",
                     self._jail.name, name, aInfo, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                    exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     def __checkUnBan(self, maxCount=None):
         """Check for IP address to unban.
@@ -617,7 +622,7 @@ class Actions(JailThread, Mapping):
         cnt = len(lst)
         if cnt:
             logSys.debug("Unbanned %s, %s ticket(s) in %r",
-                cnt, self.__banManager.size(), self._jail.name)
+                         cnt, self.__banManager.size(), self._jail.name)
         return cnt
 
     def __flushBan(self, db=False, actions=None, stop=False):
@@ -633,7 +638,7 @@ class Actions(JailThread, Mapping):
             logSys.debug("  Flush ban list")
             lst = self.__banManager.flushBanList()
         else:
-            log = False # don't log "[jail] Unban ..." if removing actions only.
+            log = False  # don't log "[jail] Unban ..." if removing actions only.
             lst = iter(self.__banManager)
         cnt = 0
         # first we'll execute flush for actions supporting this operation:
@@ -646,12 +651,12 @@ class Actions(JailThread, Mapping):
                         continue
             except Exception as e:
                 logSys.error("Failed to flush bans in jail '%s' action '%s': %s",
-                    self._jail.name, name, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                             self._jail.name, name, e,
+                             exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
                 logSys.info("No flush occurred, do consistency check")
                 if hasattr(action, 'consistencyCheck'):
                     def _beforeRepair():
-                        if stop and not getattr(action, 'actionrepair_on_unban', None): # don't need repair on stop
+                        if stop and not getattr(action, 'actionrepair_on_unban', None):  # don't need repair on stop
                             self._logSys.error("Invariant check failed. Flush is impossible.")
                             return False
                         return True
@@ -671,7 +676,7 @@ class Actions(JailThread, Mapping):
             self.__unBan(ticket, actions=actions, log=log)
             cnt += 1
         logSys.debug("  Unbanned %s, %s ticket(s) in %r",
-            cnt, self.__banManager.size(), self._jail.name)
+                     cnt, self.__banManager.size(), self._jail.name)
         return cnt
 
     def __unBan(self, ticket, actions=None, log=True):
@@ -696,14 +701,15 @@ class Actions(JailThread, Mapping):
         for name, action in list(unbactions.items()):
             try:
                 logSys.debug("[%s] action %r: unban %s", self._jail.name, name, ip)
-                if not aInfo.immutable: aInfo.reset()
+                if not aInfo.immutable:
+                    aInfo.reset()
                 action.unban(aInfo)
             except Exception as e:
                 logSys.error(
                     "Failed to execute unban jail '%s' action '%s' "
                     "info '%r': %s",
                     self._jail.name, name, aInfo, e,
-                    exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+                    exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     def status(self, flavor="basic"):
         """Status of current and total ban counts and current banned IP list.

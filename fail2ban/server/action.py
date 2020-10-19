@@ -1,6 +1,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: t -*-
 # vi: set ft=python sts=4 ts=4 sw=4 noet :
 
+from future.utils import with_metaclass
+from builtins import str
+from builtins import object
 # This file is part of Fail2Ban.
 #
 # Fail2Ban is free software; you can redistribute it and/or modify
@@ -17,23 +20,9 @@
 # along with Fail2Ban; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-__author__ = "Cyril Jaquier and Fail2Ban Contributors"
-__copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2011-2012 Yaroslav Halchenko"
-__license__ = "GPL"
-
-from builtins import str
-from builtins import object
-from future.utils import with_metaclass
-
 import logging
-import os
 import re
-import signal
-import subprocess
-import tempfile
 import threading
-import time
-from abc import ABCMeta
 from collections import MutableMapping
 
 from .failregex import mapTag2Opt
@@ -42,6 +31,10 @@ from .mytime import MyTime
 from .utils import Utils
 from ..helpers import getLogger, _merge_copy_dicts, \
     splitwords, substituteRecursiveTags, uni_string, TAG_CRE, MAX_TAG_REPLACE_COUNT
+
+__author__ = "Cyril Jaquier and Fail2Ban Contributors"
+__copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2011-2012 Yaroslav Halchenko"
+__license__ = "GPL"
 
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
@@ -53,7 +46,7 @@ _cmd_lock = threading.Lock()
 allowed_ipv6 = DNSUtils.IPv6IsAllowed
 
 # capture groups from filter for map to ticket data:
-FCUSTAG_CRE = re.compile(r'<F-([A-Z0-9_\-]+)>'); # currently uppercase only
+FCUSTAG_CRE = re.compile(r'<F-([A-Z0-9_\-]+)>')  # currently uppercase only
 
 COND_FAMILIES = ('inet4', 'inet6')
 CONDITIONAL_FAM_RE = re.compile(r"^(\w+)\?(family)=(.*)$")
@@ -61,8 +54,8 @@ CONDITIONAL_FAM_RE = re.compile(r"^(\w+)\?(family)=(.*)$")
 # Special tags:
 DYN_REPL_TAGS = {
   # System-information:
-    "fq-hostname":  lambda: str(DNSUtils.getHostname(fqdn=True)),
-    "sh-hostname":  lambda: str(DNSUtils.getHostname(fqdn=False))
+    "fq-hostname": lambda: str(DNSUtils.getHostname(fqdn=True)),
+    "sh-hostname": lambda: str(DNSUtils.getHostname(fqdn=False))
 }
 # New line, space
 ADD_REPL_TAGS = {
@@ -91,8 +84,10 @@ class CallingMap(MutableMapping, object):
 
     CM_REPR_ITEMS = ()
 
-    # immutable=True saves content between actions, without interim copying (save original on demand, recoverable via reset)
+    # immutable=True saves content between actions, without interim
+    # copying (save original on demand, recoverable via reset)
     __slots__ = ('data', 'storage', 'immutable', '__org_data')
+
     def __init__(self, *args, **kwargs):
         self.storage = dict()
         self.immutable = True
@@ -115,18 +110,18 @@ class CallingMap(MutableMapping, object):
     def _asdict(self, calculated=False, checker=None):
         d = dict(self.data, **self.storage)
         if not calculated:
-            return dict((n,v) for n,v in list(d.items()) \
-                if not callable(v) or n in self.CM_REPR_ITEMS)
-        for n,v in list(d.items()):
+            return dict((n, v) for n, v in list(d.items()) if not callable(v) or n in self.CM_REPR_ITEMS)
+        for n, v in list(d.items()):
             if callable(v):
                 try:
                     # calculate:
                     v = self.__getitem__(n)
                     # convert if needed:
-                    if checker: checker(v)
+                    if checker:
+                        checker(v)
                     # store calculated:
                     d[n] = v
-                except: # can't calculate - just ignore it
+                except:  # can't calculate - just ignore it
                     pass
         return d
 
@@ -213,7 +208,7 @@ class ActionBase(object):
     Any additional arguments specified in `jail.conf` or passed
     via `fail2ban-client` will be passed as keyword arguments.
     """
-    #__metaclass__ = ABCMeta
+    #_metaclass__ = ABCMeta
 
     @classmethod
     def __subclasshook__(cls, C):
@@ -234,17 +229,17 @@ class ActionBase(object):
         self._name = name
         self._logSys = getLogger("fail2ban.%s" % self.__class__.__name__)
 
-    def start(self): # pragma: no cover - abstract
+    def start(self):  # pragma: no cover - abstract
         """Executed when the jail/action is started.
         """
         pass
 
-    def stop(self): # pragma: no cover - abstract
+    def stop(self):  # pragma: no cover - abstract
         """Executed when the jail/action is stopped.
         """
         pass
 
-    def ban(self, aInfo): # pragma: no cover - abstract
+    def ban(self, aInfo):  # pragma: no cover - abstract
         """Executed when a ban occurs.
 
         Parameters
@@ -255,7 +250,7 @@ class ActionBase(object):
         """
         pass
 
-    def reban(self, aInfo): # pragma: no cover - abstract
+    def reban(self, aInfo):  # pragma: no cover - abstract
         """Executed when a ban occurs.
 
         Parameters
@@ -267,10 +262,10 @@ class ActionBase(object):
         return self.ban(aInfo)
 
     @property
-    def _prolongable(self): # pragma: no cover - abstract
+    def _prolongable(self):  # pragma: no cover - abstract
         return False
 
-    def unban(self, aInfo): # pragma: no cover - abstract
+    def unban(self, aInfo):  # pragma: no cover - abstract
         """Executed when a ban expires.
 
         Parameters
@@ -286,6 +281,7 @@ WRAP_CMD_PARAMS = {
     'timeout': 'str2seconds',
     'bantime': 'ignore',
 }
+
 
 class CommandAction(ActionBase):
     """A action which executes OS shell commands.
@@ -315,7 +311,7 @@ class CommandAction(ActionBase):
     timeout
     """
 
-    _escapedTags = set(('matches', 'ipmatches', 'ipjailmatches'))
+    _escapedTags = (('matches', 'ipmatches', 'ipjailmatches'))
 
     def clearAllParams(self):
         """ Clear all lists/dicts parameters (used by reloading)
@@ -323,22 +319,22 @@ class CommandAction(ActionBase):
         self.__init = 1
         try:
             self.timeout = 60
-            ## Command executed in order to initialize the system.
+            # Command executed in order to initialize the system.
             self.actionstart = ''
-            ## Command executed when ticket gets banned.
+            # Command executed when ticket gets banned.
             self.actionban = ''
             self.actionreban = ''
-            ## Command executed when ticket gets removed.
+            # Command executed when ticket gets removed.
             self.actionunban = ''
-            ## Command executed in order to check requirements.
+            # Command executed in order to check requirements.
             self.actioncheck = ''
-            ## Command executed in order to restore sane environment in error case.
+            # Command executed in order to restore sane environment in error case.
             self.actionrepair = ''
-            ## Command executed in order to flush all bans at once (e. g. by stop/shutdown the system).
+            # Command executed in order to flush all bans at once (e. g. by stop/shutdown the system).
             self.actionflush = ''
-            ## Command executed in order to stop the system.
+            # Command executed in order to stop the system.
             self.actionstop = ''
-            ## Command executed in case of reloading action.
+            # Command executed in case of reloading action.
             self.actionreload = ''
         finally:
             self.__init = 0
@@ -354,13 +350,13 @@ class CommandAction(ActionBase):
 
     @classmethod
     def __subclasshook__(cls, C):
-        return NotImplemented # Standard checks
+        return NotImplemented  # Standard checks
 
     def __setattr__(self, name, value):
         if not name.startswith('_') and not self.__init and not callable(value):
             # special case for some parameters:
             wrp = WRAP_CMD_PARAMS.get(name)
-            if wrp == 'ignore': # ignore (filter) dynamic parameters
+            if wrp == 'ignore':  # ignore (filter) dynamic parameters
                 return
             elif wrp == 'str2seconds':
                 value = MyTime.str2seconds(value)
@@ -409,49 +405,52 @@ class CommandAction(ActionBase):
         # replace operation tag (interpolate all values), be sure family is enclosed as conditional value
         # (as lambda in addrepl so only if not overwritten in action):
         cmd = self.replaceTag(tag, self._properties,
-            conditional=('family='+family if family else ''),
-            cache=self.__substCache)
-        if not family or '<' not in cmd: return cmd
+                                conditional=('family='+family if family else ''),
+                                cache=self.__substCache)
+        if not family or '<' not in cmd:
+            return cmd
         # replace family as dynamic tags, important - don't cache, no recursion and auto-escape here:
-        cmd = self.replaceDynamicTags(cmd, {'family':family})
+        cmd = self.replaceDynamicTags(cmd, {'family': family})
         return cmd
 
     def _operationExecuted(self, tag, family, *args):
         """ Get, set or delete command of operation considering family.
         """
-        key = ('__eOpCmd',tag)
-        if not len(args): # get
-            if not callable(family): # pragma: no cover
+        key = ('__eOpCmd', tag)
+        if not len(args):  # get
+            if not callable(family):  # pragma: no cover
                 return self.__substCache.get(key, {}).get(family)
             # family as expression - use it to filter values:
             return [v for f, v in list(self.__substCache.get(key, {}).items()) if family(f)]
         cmd = args[0]
-        if cmd: # set:
+        if cmd:  # set:
             try:
                 famd = self.__substCache[key]
             except KeyError:
                 famd = self.__substCache[key] = {}
             famd[family] = cmd
-        else: # delete (given family and all other with same command):
+        else:  # delete (given family and all other with same command):
             try:
                 famd = self.__substCache[key]
                 cmd = famd.pop(family)
                 for family, v in list(famd.items()):
                     if v == cmd:
                         del famd[family]
-            except KeyError: # pragma: no cover
+            except KeyError:  # pragma: no cover
                 pass
 
-    def _executeOperation(self, tag, operation, family=[], afterExec=None):
+    def _executeOperation(self, tag, operation, family=None, afterExec=None):
         """Executes the operation commands (like "actionstart", "actionstop", etc).
 
         Replace the tags in the action command with actions properties
         and executes the resulting command.
         """
+        if family is None:
+            family = []
         # check valid tags in properties (raises ValueError if self recursion, etc.):
         res = True
         err = 'Script error'
-        if not family: # all started:
+        if not family:  # all started:
             family = [famoper for (famoper,v) in list(self.__started.items()) if v]
         for famoper in family:
             try:
@@ -461,7 +460,8 @@ class CommandAction(ActionBase):
                 if cmd and cmd not in self._operationExecuted(tag, lambda f: f != famoper):
                     ret = self.executeCmd(cmd, self.timeout)
                     res &= ret
-                if afterExec: afterExec(famoper, ret)
+                if afterExec:
+                    afterExec(famoper, ret)
                 self._operationExecuted(tag, famoper, cmd if ret else None)
             except ValueError as e:
                 res = False
@@ -488,12 +488,12 @@ class CommandAction(ActionBase):
         v = self._properties.get('__families')
         if v: return v
         v = self._properties.get('families')
-        if v and not isinstance(v, (list,set)): # pragma: no cover - still unused
+        if v and not isinstance(v, (list, set)):  # pragma: no cover - still unused
             v = splitwords(v)
-        elif self._hasCondSection: # all conditional families:
+        elif self._hasCondSection:  # all conditional families:
             # todo: check it is needed at all # common (resp. ipv4) + ipv6 if allowed:
             v = ['inet4', 'inet6'] if allowed_ipv6() else ['inet4']
-        else: # all action tags seems to be the same
+        else:  # all action tags seems to be the same
             v = ['']
         self._properties['__families'] = v
         return v
@@ -527,9 +527,10 @@ class CommandAction(ActionBase):
         if self._startOnDemand:
             if not forceStart:
                 return True
-        elif not forceStart and self.__started.get(family): # pragma: no cover - normally unreachable
+        elif not forceStart and self.__started.get(family):  # pragma: no cover - normally unreachable
             return True
         family = [family] if family is not None else self._families
+
         def _started(family, ret):
             if ret:
                 self._operationExecuted('<actionstop>', family, None)
@@ -557,12 +558,12 @@ class CommandAction(ActionBase):
         # ban:
         if not self._processCmd(cmd, aInfo):
             raise RuntimeError("Error banning %(ip)s" % aInfo)
-        self.__started[family] = self.__started.get(family, 0) | 3; # started and contains items
+        self.__started[family] = self.__started.get(family, 0) | 3  # started and contains items
 
     @property
     def _prolongable(self):
         return (hasattr(self, 'actionprolong') and self.actionprolong
-            and not str(self.actionprolong).isspace())
+                  and not str(self.actionprolong).isspace())
 
     def prolong(self, aInfo):
         """Executes the "actionprolong" command.
@@ -592,7 +593,7 @@ class CommandAction(ActionBase):
             the ban.
         """
         family = aInfo.get('family', '')
-        if self.__started.get(family, 0) & 2: # contains items
+        if self.__started.get(family, 0) & 2:  # contains items
             if not self._processCmd('<actionunban>', aInfo):
                 raise RuntimeError("Error unbanning %(ip)s" % aInfo)
 
@@ -621,13 +622,15 @@ class CommandAction(ActionBase):
         and executes the resulting command.
         """
         # collect started families, may be started on demand (conditional):
-        family = [f for (f,v) in list(self.__started.items()) if v & 3 == 3]; # started and contains items
+        family = [f for (f, v) in list(self.__started.items()) if v & 3 == 3]  # started and contains items
         # if nothing contains items:
-        if not family: return True
+        if not family:
+            return True
+
         # flush:
         def _afterFlush(family, ret):
             if ret and self.__started.get(family):
-                self.__started[family] &= ~2; # no items anymore
+                self.__started[family] &= ~2  # no items anymore
         return self._executeOperation('<actionflush>', 'flushing', family=family, afterExec=_afterFlush)
 
     def stop(self):
@@ -646,16 +649,18 @@ class CommandAction(ActionBase):
         """
         # collect started families, if started on demand (conditional):
         if family is None:
-            family = [f for (f,v) in list(self.__started.items()) if v]
+            family = [f for (f, v) in list(self.__started.items()) if v]
             # if no started (on demand) actions:
-            if not family: return True
+            if not family:
+                return True
             self.__started = {}
         else:
             try:
                 self.__started[family] &= 0
                 family = [family]
-            except KeyError: # pragma: no cover
+            except KeyError:  # pragma: no cover
                 return True
+
         def _stopped(family, ret):
             if ret:
                 self._operationExecuted('<actionstart>', family, None)
@@ -712,6 +717,7 @@ class CommandAction(ActionBase):
 
         """
         _map2c = {'\n': 'n', '\r': 'r'}
+
         def substChar(m):
             c = m.group()
             return '\\' + _map2c.get(c, c)
@@ -735,7 +741,8 @@ class CommandAction(ActionBase):
         str
             `query` string with tags replaced.
         """
-        if '<' not in query: return query
+        if '<' not in query:
+            return query
 
         # use cache if allowed:
         if cache is not None:
@@ -762,13 +769,14 @@ class CommandAction(ActionBase):
             # interpolation of dictionary:
             if subInfo is None:
                 subInfo = substituteRecursiveTags(aInfo, conditional, ignore=cls._escapedTags,
-                    addrepl=addrepl)
+                                                    addrepl=addrepl)
             # cache if possible:
             if csubkey is not None:
                 cache[csubkey] = subInfo
 
         # additional replacement as calling map:
         ADD_REPL_TAGS_CM = CallingMap(ADD_REPL_TAGS)
+
         # substitution callable, used by interpolation of each tag
         def substVal(m):
             tag = m.group(1)            # tagname from match
@@ -793,9 +801,11 @@ class CommandAction(ActionBase):
         while True:
             value = TAG_CRE.sub(substVal, query)
             # **Important**: no recursive replacement for tags from calling map (properties only):
-            if noRecRepl: break
+            if noRecRepl:
+                break
             # possible recursion ?
-            if value == query or '<' not in value: break
+            if value == query or '<' not in value:
+                break
             query = value
             count -= 1
             if count <= 0:
@@ -852,6 +862,7 @@ class CommandAction(ActionBase):
 
         # additional replacement as calling map:
         ADD_REPL_TAGS_CM = CallingMap(ADD_REPL_TAGS)
+
         # substitution callable, used by interpolation of each tag
         def substVal(m):
             tag = m.group(1)            # tagname from match
@@ -870,7 +881,9 @@ class CommandAction(ActionBase):
         # Replace ticket options (filter capture groups) non-recursive:
         if '<' in realCmd:
             tickData = aInfo.get("F-*")
-            if not tickData: tickData = {}
+            if not tickData:
+                tickData = {}
+
             def substTag(m):
                 tag = mapTag2Opt(m.group(1))
                 try:
@@ -889,6 +902,7 @@ class CommandAction(ActionBase):
     @property
     def banEpoch(self):
         return getattr(self, '_banEpoch', 0)
+
     def invalidateBanEpoch(self):
         """Increments ban epoch of jail and this action, so already banned tickets would cause
         a re-ban for all tickets with previous epoch."""
@@ -929,7 +943,7 @@ class CommandAction(ActionBase):
             #    it will not be banned, because "already banned" will happen.
             try:
                 self._stop(family)
-            except RuntimeError: # bypass error in stop (if start/check succeeded hereafter).
+            except RuntimeError:  # bypass error in stop (if start/check succeeded hereafter).
                 pass
             self._start(family, forceStart=forceStart or not self._startOnDemand)
         if self.__started.get(family) and not self.executeCmd(checkCmd, self.timeout):
@@ -986,7 +1000,8 @@ class CommandAction(ActionBase):
 
             # Replace static fields
             realCmd = self.replaceTag(cmd, self._properties,
-                conditional=('family='+family if family else ''), cache=self.__substCache)
+                                      conditional=('family='+family if family else ''),
+                                      cache=self.__substCache)
 
             # Replace dynamical tags, important - don't cache, no recursion and auto-escape here
             if aInfo is not None:

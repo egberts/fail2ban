@@ -28,6 +28,7 @@ from ..version import version
 from ..server.ipdns import IPAddr
 from ..exceptions import UnknownJailException, DuplicateJailException
 
+
 class BeautifierTest(unittest.TestCase):
 
 	def setUp(self):
@@ -76,24 +77,30 @@ class BeautifierTest(unittest.TestCase):
 
 		self.b.setInputCmd(["status", "ssh"])
 		response = (
-					("Filter", [
-							("Currently failed", 0),
-							("Total failed", 0),
-							("File list", "/var/log/auth.log")
-						]
-					),
-					("Actions", [
-							("Currently banned", 3),
-							("Total banned", 3),
-							("Banned IP list", [
-									IPAddr("192.168.0.1"),
-									IPAddr("::ffff:10.2.2.1"),
-									IPAddr("2001:db8::1")
-								]
-							)
+			(
+				"Filter",
+				[
+					("Currently failed", 0),
+					("Total failed", 0),
+					("File list", "/var/log/auth.log")
+				]
+			),
+			(
+				"Actions",
+				[
+					("Currently banned", 3),
+					("Total banned", 3),
+					(
+						"Banned IP list",
+						[
+							IPAddr("192.168.0.1"),
+							IPAddr("::ffff:10.2.2.1"),
+							IPAddr("2001:db8::1")
 						]
 					)
-				)
+				]
+			)
+		)
 		output = "Status for the jail: ssh\n"
 		output += "|- Filter\n"
 		output += "|  |- Currently failed:	0\n"
@@ -183,12 +190,15 @@ class BeautifierTest(unittest.TestCase):
 		self.b.setInputCmd(["get", "sshd", "datepattern"])
 		output = "Current date pattern set to: "
 		response = (None, "Default Detectors")
-		self.assertEqual(self.b.beautify(None), 
-				output + "Not set/required")
-		self.assertEqual(self.b.beautify(response), 
-				output + "Default Detectors")
-		self.assertEqual(self.b.beautify(("test", "test")), 
-				output + "test (test)")
+		self.assertEqual(
+			self.b.beautify(None),
+			output + "Not set/required")
+		self.assertEqual(
+			self.b.beautify(response),
+			output + "Default Detectors")
+		self.assertEqual(
+			self.b.beautify(("test", "test")),
+			output + "test (test)")
 
 	def testIgnoreIP(self):
 		self.b.setInputCmd(["get", "sshd", "ignoreip"])
@@ -246,9 +256,9 @@ class BeautifierTest(unittest.TestCase):
 		output += "ban, unban"
 		self.assertEqual(self.b.beautify(["ban", "unban"]), output)
 	
-#	def testException(self):
-#		self.b.setInputCmd(["get", "sshd", "logpath"])
-#		self.assertRaises(self.b.beautify(1), TypeError)
+# def testException(self):
+# 	self.b.setInputCmd(["get", "sshd", "logpath"])
+# 		self.assertRaises(self.b.beautify(1), TypeError)
 
 	def testBeautifyError(self):
 		response = UnknownJailException("sshd")

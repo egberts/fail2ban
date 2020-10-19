@@ -48,8 +48,7 @@ logSys = getLogger(__name__)
 # This class reads from systemd journal and detects login failures or anything
 # else that matches a given regular expression. This class is instantiated by
 # a Jail object.
-
-class FilterSystemd(JournalFilter): # pragma: systemd no cover
+class FilterSystemd(JournalFilter):  # pragma: systemd no cover
     ##
     # Constructor.
     #
@@ -68,7 +67,7 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
 
     @staticmethod
     def _getJournalArgs(kwargs):
-        args = {'converters':{'__CURSOR': lambda x: x}}
+        args = {'converters': {'__CURSOR': lambda x: x}}
         try:
             args['path'] = kwargs.pop('journalpath')
         except KeyError:
@@ -106,7 +105,7 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
 
     def _addJournalMatches(self, matches):
         if self.__matches:
-            self.__journal.add_disjunction() # Add OR
+            self.__journal.add_disjunction()  # Add OR
         newMatches = []
         for match in matches:
             newMatches.append([])
@@ -136,7 +135,8 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
             self.resetJournalMatches()
             raise
         else:
-            logSys.info("[%s] Added journal match for: %r", self.jailName,
+            logSys.info(
+                "[%s] Added journal match for: %r", self.jailName,
                 " ".join(match))
     ##
     # Reset a journal match filter called on removal or failure
@@ -173,7 +173,8 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
         else:
             raise ValueError("Match %r not found" % match)
         self.resetJournalMatches()
-        logSys.info("[%s] Removed journal match for: %r", self.jailName,
+        logSys.info(
+            "[%s] Removed journal match for: %r", self.jailName,
             match if match else '*')
 
     ##
@@ -196,8 +197,9 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
         """ Returns time of entry as tuple (ISO-str, Posix)."""
         date = logentry.get('_SOURCE_REALTIME_TIMESTAMP')
         if date is None:
-                date = logentry.get('__REALTIME_TIMESTAMP')
-        return (date.isoformat(), time.mktime(date.timetuple()) + old_div(date.microsecond,1.0E6))
+            date = logentry.get('__REALTIME_TIMESTAMP')
+        return (date.isoformat(),
+                time.mktime(date.timetuple()) + old_div(date.microsecond, 1.0E6))
 
     ##
     # Format journal log entry into syslog style
@@ -221,12 +223,12 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
             if not v:
                 v = logentry.get('_PID')
             if v:
-                try: # [integer] (if already numeric):
+                try:  # [integer] (if already numeric):
                     v = "[%i]" % v
                 except TypeError:
-                    try: # as [integer] (try to convert to int):
+                    try:  # as [integer] (try to convert to int):
                         v = "[%i]" % int(v, 0)
-                    except (TypeError, ValueError): # fallback - [string] as it is
+                    except (TypeError, ValueError):  # fallback - [string] as it is
                         v = "[%s]" % v
                 logelements[-1] += v
             logelements[-1] += ":"
@@ -235,7 +237,7 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
                 if monotonic is None:
                     monotonic = logentry.get('__MONOTONIC_TIMESTAMP')[0]
                 logelements.append("[%12.6f]" % monotonic.total_seconds())
-        msg = logentry.get('MESSAGE','')
+        msg = logentry.get('MESSAGE', '')
         if isinstance(msg, list):
             logelements.append(" ".join(uni_decode(v, enc) for v in msg))
         else:
@@ -244,9 +246,10 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
         logline = " ".join(logelements)
 
         date = self.getJrnEntTime(logentry)
-        logSys.log(5, "[%s] Read systemd journal entry: %s %s", self.jailName,
+        logSys.log(
+            5, "[%s] Read systemd journal entry: %s %s", self.jailName,
             date[0], logline)
-        ## use the same type for 1st argument:
+        # use the same type for 1st argument:
         return ((logline[:0], date[0], logline.replace('\n', '\\n')), date[1])
 
     def seekToTime(self, date):
@@ -273,7 +276,7 @@ class FilterSystemd(JournalFilter): # pragma: systemd no cover
         if self.jail.database is not None:
             start_time = self.jail.database.getJournalPos(self.jail, 'systemd-journal') or 0
         # Seek to max(last_known_time, now - findtime) in journal
-        start_time = max( start_time, MyTime.time() - int(self.getFindTime()) )
+        start_time = max(start_time, MyTime.time() - int(self.getFindTime())
         self.seekToTime(start_time)
         # Move back one entry to ensure do not end up in dead space
         # if start time beyond end of journal

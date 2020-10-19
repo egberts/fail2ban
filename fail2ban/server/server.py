@@ -53,7 +53,7 @@ DEF_LOGTARGET = "STDOUT"
 
 try:
     from .database import Fail2BanDb
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     # Dont print error here, as database may not even be used
     Fail2BanDb = None
 
@@ -61,10 +61,12 @@ except ImportError: # pragma: no cover
 def _thread_name():
     return threading.current_thread().__class__.__name__
 
+
 try:
     FileExistsError
-except NameError: # pragma: 3.x no cover
+except NameError:  # pragma: 3.x no cover
     FileExistsError = OSError
+
 
 def _make_file_path(name):
     """Creates path of file (last level only) on demand"""
@@ -75,7 +77,7 @@ def _make_file_path(name):
         try:
             os.mkdir(name)
         except (OSError, FileExistsError) as e:
-            if e.errno != 17: # pragma: no cover - not EEXIST is not covered
+            if e.errno != 17:  # pragma: no cover - not EEXIST is not covered
                 raise
 
 
@@ -89,7 +91,7 @@ class Server(object):
         self.__daemon = daemon
         self.__transm = Transmitter(self)
         self.__reload_state = {}
-        #self.__asyncServer = AsyncServer(self.__transm)
+        # self.__asyncServer = AsyncServer(self.__transm)
         self.__asyncServer = None
         self.__logLevel = None
         self.__logTarget = None
@@ -102,11 +104,11 @@ class Server(object):
         }
         self.__prev_signals = {}
 
-    def __sigTERMhandler(self, signum, frame): # pragma: no cover - indirect tested
+    def __sigTERMhandler(self, signum, frame):  # pragma: no cover - indirect tested
         logSys.debug("Caught signal %d. Exiting", signum)
         self.quit()
 
-    def __sigUSR1handler(self, signum, fname): # pragma: no cover - indirect tested
+    def __sigUSR1handler(self, signum, fname):  # pragma: no cover - indirect tested
         logSys.debug("Caught signal %d. Flushing logs", signum)
         self.flushLogs()
 
@@ -119,7 +121,7 @@ class Server(object):
         # First set the mask to only allow access to owner
         os.umask(0o077)
         # Second daemonize before logging etc, because it will close all handles:
-        if self.__daemon: # pragma: no cover
+        if self.__daemon:  # pragma: no cover
             logSys.info("Starting in daemon mode")
             ret = self.__createDaemon()
             # If forked parent - return here (parent process will configure server later):
@@ -137,17 +139,23 @@ class Server(object):
 
         # Set all logging parameters (or use default if not specified):
         self.__verbose = conf.get("verbose", None)
-        self.setSyslogSocket(conf.get("syslogsocket",
-            self.__syslogSocket if self.__syslogSocket is not None else DEF_SYSLOGSOCKET))
-        self.setLogLevel(conf.get("loglevel",
-            self.__logLevel if self.__logLevel is not None else DEF_LOGLEVEL))
-        self.setLogTarget(conf.get("logtarget",
-            self.__logTarget if self.__logTarget is not None else DEF_LOGTARGET))
+        self.setSyslogSocket(
+            conf.get(
+                "syslogsocket",
+                self.__syslogSocket if self.__syslogSocket is not None else DEF_SYSLOGSOCKET))
+        self.setLogLevel(
+            conf.get(
+                "loglevel",
+                self.__logLevel if self.__logLevel is not None else DEF_LOGLEVEL))
+        self.setLogTarget(
+            conf.get(
+                "logtarget",
+                self.__logTarget if self.__logTarget is not None else DEF_LOGTARGET))
 
         logSys.info("-"*50)
         logSys.info("Starting Fail2ban v%s", version.version)
 
-        if self.__daemon: # pragma: no cover
+        if self.__daemon:  # pragma: no cover
             logSys.info("Daemon started")
 
         # Install signal handlers
@@ -166,7 +174,7 @@ class Server(object):
             pidFile = open(pidfile, 'w')
             pidFile.write("%s\n" % os.getpid())
             pidFile.close()
-        except (OSError, IOError) as e: # pragma: no cover
+        except (OSError, IOError) as e:  # pragma: no cover
             logSys.error("Unable to create PID file: %s", e)
 
         # Create observers and start it:
@@ -241,7 +249,6 @@ class Server(object):
             self.__asyncServer = None
         logSys.info("Exiting Fail2ban")
 
-
     def addJail(self, name, backend):
         addflg = True
         if self.__reload_state.get(name) and self.__jails.exists(name):
@@ -299,7 +306,7 @@ class Server(object):
     def reloadJails(self, name, opts, begin):
         if begin:
             # begin reload:
-            if self.__reload_state and (name == '--all' or self.__reload_state.get(name)): # pragma: no cover
+            if self.__reload_state and (name == '--all' or self.__reload_state.get(name)):  # pragma: no cover
                 raise ValueError('Reload already in progress')
             logSys.info("Reload " + (("jail %s" % name) if name != '--all' else "all jails"))
             with self.__lock:
@@ -386,21 +393,21 @@ class Server(object):
         filter_ = self.__jails[name].filter
         if isinstance(filter_, FileFilter):
             return filter_.getLogPaths()
-        else: # pragma: systemd no cover
+        else:  # pragma: systemd no cover
             logSys.info("Jail %s is not a FileFilter instance" % name)
             return []
 
-    def addJournalMatch(self, name, match): # pragma: systemd no cover
+    def addJournalMatch(self, name, match):  # pragma: systemd no cover
         filter_ = self.__jails[name].filter
         if isinstance(filter_, JournalFilter):
             filter_.addJournalMatch(match)
 
-    def delJournalMatch(self, name, match): # pragma: systemd no cover
+    def delJournalMatch(self, name, match):  # pragma: systemd no cover
         filter_ = self.__jails[name].filter
         if isinstance(filter_, JournalFilter):
             filter_.delJournalMatch(match)
 
-    def getJournalMatch(self, name): # pragma: systemd no cover
+    def getJournalMatch(self, name):  # pragma: systemd no cover
         filter_ = self.__jails[name].filter
         if isinstance(filter_, JournalFilter):
             return filter_.getJournalMatch()
@@ -457,7 +464,8 @@ class Server(object):
 
     def addFailRegex(self, name, value, multiple=False):
         flt = self.__jails[name].filter
-        if not multiple: value = (value,)
+        if not multiple:
+            value = (value,)
         for value in value:
             logSys.debug("  failregex: %r", value)
             flt.addFailRegex(value)
@@ -470,7 +478,8 @@ class Server(object):
 
     def addIgnoreRegex(self, name, value, multiple=False):
         flt = self.__jails[name].filter
-        if not multiple: value = (value,)
+        if not multiple:
+            value = (value,)
         for value in value:
             logSys.debug("  ignoreregex: %r", value)
             flt.addIgnoreRegex(value)
@@ -507,8 +516,9 @@ class Server(object):
 
     # Action
     def addAction(self, name, value, *args):
-        ## create (or reload) jail action:
-        self.__jails[name].actions.add(value, *args,
+        # create (or reload) jail action:
+        self.__jails[name].actions.add(
+            value, *args,
             reload=name in self.__reload_state)
 
     def getActions(self, name):
@@ -677,10 +687,11 @@ class Server(object):
             if systarget == "SYSLOG":
                 facility = logOptions.get('facility', 'DAEMON').upper()
                 # backwards compatibility - default no padding for syslog handler:
-                if padding is None: padding = '0'
+                if padding is None:
+                    padding = '0'
                 try:
                     facility = getattr(logging.handlers.SysLogHandler, 'LOG_' + facility)
-                except AttributeError: # pragma: no cover
+                except AttributeError:  # pragma: no cover
                     logSys.error("Unable to set facility %r, using 'DAEMON'", logOptions.get('facility'))
                     facility = logging.handlers.SysLogHandler.LOG_DAEMON
                 if self.__syslogSocket == "auto":
@@ -721,7 +732,7 @@ class Server(object):
                 try:
                     handler.flush()
                     handler.close()
-                except (ValueError, KeyError): # pragma: no cover
+                except (ValueError, KeyError):  # pragma: no cover
                     # Is known to be thrown after logging was shutdown once
                     # with older Pythons -- seems to be safe to ignore there
                     # At least it was still failing on 2.6.2-0ubuntu1 (jaunty)
@@ -729,7 +740,7 @@ class Server(object):
                             (3, 2) <= sys.version_info:
                         raise
             # detailed format by deep log levels (as DEBUG=10):
-            if logger.getEffectiveLevel() <= logging.DEBUG: # pragma: no cover
+            if logger.getEffectiveLevel() <= logging.DEBUG:  # pragma: no cover
                 if self.__verbose is None:
                     self.__verbose = logging.DEBUG - logger.getEffectiveLevel() + 1
             # If handler don't already add date to the message:
@@ -748,7 +759,7 @@ class Server(object):
             else:
                 # verbose log-format:
                 verbose = 0
-                if self.__verbose is not None and self.__verbose > 2: # pragma: no cover
+                if self.__verbose is not None and self.__verbose > 2:  # pragma: no cover
                     verbose = self.__verbose-1
                 fmt = getVerbosityFormat(verbose, addtime=addtime, padding=padding)
             # tell the handler to use this format
@@ -780,7 +791,7 @@ class Server(object):
             self.__syslogSocket = syslogsocket
         # Conditionally reload, logtarget depends on socket path when SYSLOG
         return self.__logTarget != "SYSLOG"\
-               or self.setLogTarget(self.__logTarget)
+            or self.setLogTarget(self.__logTarget)
 
     def getLogTarget(self):
         with self.__loggingLock:
@@ -810,7 +821,7 @@ class Server(object):
         for o, v in list(value.items()):
             if o == 'stacksize':
                 threading.stack_size(int(v)*1024)
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 raise KeyError("unknown option %r" % o)
 
     def getThreadOptions(self):
@@ -832,7 +843,7 @@ class Server(object):
                 _make_file_path(filename)
                 self.__db = Fail2BanDb(filename)
                 self.__db.delAllJails()
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 logSys.error(
                     "Unable to import fail2ban database module as sqlite "
                     "is not available.")
@@ -842,7 +853,7 @@ class Server(object):
     def getDatabase(self):
         return self.__db
 
-    def __createDaemon(self): # pragma: no cover
+    def __createDaemon(self):  # pragma: no cover
         """ Detach a process from the controlling terminal and run it in the
             background as a daemon.
 
@@ -909,7 +920,7 @@ class Server(object):
 
         # urandom should not be closed in Python 3.4.0. Fixed in 3.4.1
         # http://bugs.python.org/issue21207
-        if sys.version_info[0:3] == (3, 4, 0): # pragma: no cover
+        if sys.version_info[0:3] == (3, 4, 0):  # pragma: no cover
             urandom_fd = os.open("/dev/urandom", os.O_RDONLY)
             for fd in range(0, maxfd):
                 try:

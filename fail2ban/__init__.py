@@ -24,6 +24,8 @@ __author__ = "Cyril Jaquier"
 __copyright__ = "Copyright (c) 2004 Cyril Jaquier"
 __license__ = "GPL"
 
+from time import strptime
+
 import logging.handlers
 from builtins import range
 
@@ -58,6 +60,7 @@ def _Logger_notice(self, msg, *args, **kwargs):
     if self.isEnabledFor(logging.NOTICE):
         self._log(logging.NOTICE, msg, args, **kwargs)
 
+
 logging.Logger.notice = _Logger_notice
 
 
@@ -71,19 +74,23 @@ def _root_notice(msg, *args, **kwargs):
         logging.basicConfig()
     logging.root.notice(msg, *args, **kwargs)
 
+
 # make the notice root level function known
 logging.notice = _root_notice
 
 # add NOTICE to the priority map of all the levels
 logging.handlers.SysLogHandler.priority_map['NOTICE'] = 'notice'
 
-from time import strptime
+
 # strptime thread safety hack-around - http://bugs.python.org/issue7980
 strptime("2012", "%Y")
+
 
 # short names for pure numeric log-level ("Level 25" could be truncated by short formats):
 def _init():
     for i in range(50):
         if logging.getLevelName(i).startswith('Level'):
             logging.addLevelName(i, '#%02d-Lev.' % i)
+
+
 _init()

@@ -26,4 +26,5 @@ class TestAction(ActionBase):
     def testmethod(self, text):
         return "%s %s %s" % (self._opt3, text, self.opt1)
 
+
 Action = TestAction

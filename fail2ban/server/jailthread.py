@@ -53,13 +53,13 @@ class JailThread(Thread):
 
     def __init__(self, name=None):
         super(JailThread, self).__init__(name=name)
-        ## Should going with main thread also:
+        # Should going with main thread also:
         self.daemon = True
-        ## Control the state of the thread (None - was not started, True - active, False - stopped).
+        # Control the state of the thread (None - was not started, True - active, False - stopped).
         self.active = None
-        ## Control the idle state of the thread.
+        # Control the idle state of the thread.
         self.idle = False
-        ## The time the thread sleeps in the loop.
+        # The time the thread sleeps in the loop.
         self.sleeptime = Utils.DEFAULT_SLEEP_TIME
 
         # excepthook workaround for threads, derived from:
@@ -70,7 +70,8 @@ class JailThread(Thread):
             try:
                 run(*args, **kwargs)
             except Exception as e:
-                # avoid very sporadic error "'NoneType' object has no attribute 'exc_info'" (https://bugs.python.org/issue7336)
+                # avoid very sporadic error "'NoneType' object has no
+                # attribute 'exc_info'" (https://bugs.python.org/issue7336)
                 # only extremely fast systems are affected ATM (2.7 / 3.x), if thread ends nothing is available here.
                 if sys is not None:
                     excepthook(*sys.exc_info())
@@ -78,17 +79,17 @@ class JailThread(Thread):
                     print(e)
         self.run = run_with_except_hook
 
-    if sys.version_info >= (3,): # pragma: 2.x no cover
+    if sys.version_info >= (3,):  # pragma: 2.x no cover
         def _bootstrap(self):
             prctl_set_th_name(self.name)
-            return super(JailThread, self)._bootstrap();
-    else: # pragma: 3.x no cover
+            return super(JailThread, self)._bootstrap()
+    else:  # pragma: 3.x no cover
         def __bootstrap(self):
             prctl_set_th_name(self.name)
             return Thread._Thread__bootstrap(self)
 
     @abstractmethod
-    def status(self, flavor="basic"): # pragma: no cover - abstract
+    def status(self, flavor="basic"):  # pragma: no cover - abstract
         """Abstract - Should provide status information.
         """
         pass
@@ -105,7 +106,7 @@ class JailThread(Thread):
         self.active = False
 
     @abstractmethod
-    def run(self): # pragma: no cover - absract
+    def run(self):  # pragma: no cover - absract
         """Abstract - Called when thread starts, thread stops when returns.
         """
         pass
@@ -113,15 +114,16 @@ class JailThread(Thread):
     def join(self):
         """ Safer join, that could be called also for not started (or ended) threads (used for cleanup).
         """
-        ## if cleanup needed - create derivate and call it before join...
+        # if cleanup needed - create derivate and call it before join...
 
-        ## if was really started - should call join:
+        # if was really started - should call join:
         if self.active is not None:
             super(JailThread, self).join()
 
-## python 2.x replace binding of private __bootstrap method:
-if sys.version_info < (3,): # pragma: 3.x no cover
+
+# python 2.x replace binding of private __bootstrap method:
+if sys.version_info < (3,):  # pragma: 3.x no cover
     JailThread._Thread__bootstrap = JailThread._JailThread__bootstrap
-## python 3.9, restore isAlive method:
-elif not hasattr(JailThread, 'isAlive'): # pragma: 2.x no cover
-     JailThread.isAlive = JailThread.is_alive
+# python 3.9, restore isAlive method:
+elif not hasattr(JailThread, 'isAlive'):  # pragma: 2.x no cover
+    JailThread.isAlive = JailThread.is_alive

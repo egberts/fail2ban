@@ -17,4 +17,5 @@ class TestAction(ActionBase):
         # as well as unbans are done individually after errored flush.
         raise ValueError("intended error")
 
+
 Action = TestAction

@@ -40,10 +40,10 @@ logSys = getLogger(__name__)
 class Ticket(object):
     __slots__ = ('_ip', '_flags', '_banCount', '_banTime', '_time', '_data', '_retry', '_lastReset')
 
-    MAX_TIME = 0X7FFFFFFFFFFF ;# 4461763-th year
+    MAX_TIME = 0X7FFFFFFFFFFF  # 4461763-th year
 
     RESTORED = 0x01
-    BANNED   = 0x08
+    BANNED = 0x08
 
     def __init__(self, ip=None, time=None, matches=None, data={}, ticket=None):
         """Ticket constructor
@@ -54,25 +54,25 @@ class Ticket(object):
         """
 
         self.setIP(ip)
-        self._flags = 0;
-        self._banCount = 0;
-        self._banTime = None;
+        self._flags = 0
+        self._banCount = 0
+        self._banTime = Non
         self._time = time if time is not None else MyTime.time()
         self._data = {'matches': matches or [], 'failures': 0}
         if data is not None:
-            for k,v in list(data.items()):
+            for k, v in list(data.items()):
                 if v is not None:
                     self._data[k] = v
         if ticket:
             # ticket available - copy whole information from ticket:
             self.update(ticket)
-            #self.__dict__.update(i for i in ticket.__dict__.iteritems() if i[0] in self.__dict__)
+            # self.__dict__.update(i for i in ticket.__dict__.iteritems() if i[0] in self.__dict__)
 
     def __str__(self):
         return "%s: ip=%s time=%s bantime=%s bancount=%s #attempts=%d matches=%r" % \
                  (self.__class__.__name__.split('.')[-1], self._ip, self._time,
-                    self._banTime, self._banCount,
-                    self._data['failures'], self._data.get('matches', []))
+                  self._banTime, self._banCount,
+                  self._data['failures'], self._data.get('matches', []))
 
     def __repr__(self):
         return str(self)
@@ -90,7 +90,6 @@ class Ticket(object):
             v = getattr(ticket, n, None)
             if v is not None:
                 setattr(self, n, v)
-
 
     def setIP(self, value):
         # guarantee using IPAddr instead of unicode, str for the IP
@@ -124,7 +123,7 @@ class Ticket(object):
         self._banCount += value
 
     def getBanCount(self):
-        return self._banCount;
+        return self._banCount
 
     def getEndOfBanTime(self, defaultBT=None):
         bantime = (self._banTime if self._banTime is not None else defaultBT)
@@ -158,12 +157,13 @@ class Ticket(object):
                 pass
 
     def getMatches(self):
-        return [(line if not isinstance(line, (list, tuple)) else "".join(line)) \
-            for line in self._data.get('matches', ())]
+        return [(line if not isinstance(line, (list, tuple)) else "".join(line))
+                for line in self._data.get('matches', ())]
 
     @property
     def restored(self):
         return self._flags & Ticket.RESTORED
+
     @restored.setter
     def restored(self, value):
         if value:
@@ -174,6 +174,7 @@ class Ticket(object):
     @property
     def banned(self):
         return self._flags & Ticket.BANNED
+
     @banned.setter
     def banned(self, value):
         if value:
@@ -186,19 +187,19 @@ class Ticket(object):
         if len(args) == 1:
             # todo: if support >= 2.7 only:
             # self._data = {k:v for k,v in args[0].iteritems() if v is not None}
-            self._data = dict([(k,v) for k,v in list(args[0].items()) if v is not None])
+            self._data = dict([(k, v) for k, v in list(args[0].items()) if v is not None])
 
         # add k,v list or dict (merge):
         elif len(args) == 2:
-            self._data.update((args,))
+            self._data.update((args, ))
         elif len(args) > 2:
-            self._data.update((k,v) for k,v in zip(*[iter(args)]*2))
+            self._data.update((k, v) for k, v in zip(*[iter(args)]*2))
         if len(argv):
             self._data.update(argv)
         # filter (delete) None values:
         # todo: if support >= 2.7 only:
         # self._data = {k:v for k,v in self._data.iteritems() if v is not None}
-        self._data = dict([(k,v) for k,v in list(self._data.items()) if v is not None])
+        self._data = dict([(k, v) for k, v in list(self._data.items()) if v is not None])
 
     def getData(self, key=None, default=None):
         # return whole data dict:
@@ -207,23 +208,24 @@ class Ticket(object):
         # return default if not exists:
         if not self._data:
             return default
-        if not isinstance(key,(str,type(None),int,float,bool,complex)):
+        if not isinstance(key, (str, type(None), int, float, bool, complex)):
             # return filtered by lambda/function:
             if callable(key):
                 # todo: if support >= 2.7 only:
                 # return {k:v for k,v in self._data.iteritems() if key(k)}
-                return dict([(k,v) for k,v in list(self._data.items()) if key(k)])
+                return dict([(k, v) for k, v in list(self._data.items()) if key(k)])
             # return filtered by keys:
             if hasattr(key, '__iter__'):
                 # todo: if support >= 2.7 only:
                 # return {k:v for k,v in self._data.iteritems() if k in key}
-                return dict([(k,v) for k,v in list(self._data.items()) if k in key])
+                return dict([(k, v) for k, v in list(self._data.items()) if k in key])
         # return single value of data:
         return self._data.get(key, default)
 
     @property
     def banEpoch(self):
         return getattr(self, '_banEpoch', 0)
+
     @banEpoch.setter
     def banEpoch(self, value):
         self._banEpoch = value
@@ -287,11 +289,11 @@ class FailTicket(Ticket):
         o.__class__ = FailTicket
         return o
 
+
 ##
 # Ban Ticket.
 #
 # This class extends the Ticket class. It is mainly used by the BanManager.
-
 class BanTicket(FailTicket):
 
     @staticmethod

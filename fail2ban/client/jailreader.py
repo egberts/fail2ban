@@ -28,7 +28,6 @@ __license__ = "GPL"
 import glob
 import json
 import os.path
-import re
 
 from .configreader import ConfigReaderUnshared, ConfigReader
 from .filterreader import FilterReader
@@ -131,8 +130,8 @@ class JailReader(ConfigReader):
 
             # Read first options only needed for merge defaults ('known/...' from filter):
             self.__opts = ConfigReader.getOptions(self, self.__name, self._configOpts1st,
-                shouldExist=True)
-            if not self.__opts: # pragma: no cover
+                                                    shouldExist=True)
+            if not self.__opts:  # pragma: no cover
                 raise JailDefError("Init jail options failed")
 
             if not self.isEnabled():
@@ -161,7 +160,7 @@ class JailReader(ConfigReader):
 
             # Read second all options (so variables like %(known/param) can be interpolated):
             self.__opts = ConfigReader.getOptions(self, self.__name, self._configOpts)
-            if not self.__opts: # pragma: no cover
+            if not self.__opts:  # pragma: no cover
                 raise JailDefError("Read jail options failed")
 
             # cumulate filter options again (ignore given in jail):
@@ -221,7 +220,7 @@ class JailReader(ConfigReader):
 
         Parameters
         ----------
-        allow_missing : bool
+        allow_no_files : bool
           Either to allow log files to be missing entirely.  Primarily is
           used for testing
          """
@@ -230,7 +229,8 @@ class JailReader(ConfigReader):
         stream2 = []
         e = self.__opts.get('config-error')
         if e:
-            stream.extend([['config-error', "Jail '%s' skipped, because of wrong configuration: %s" % (self.__name, e)]])
+            stream.extend([['config-error', "Jail '%s' skipped, "
+                            "because of wrong configuration: %s" % (self.__name, e)]])
             return stream
         # fill jail with filter options, using filter (only not overriden in jail):
         if self.__filter:
@@ -239,7 +239,8 @@ class JailReader(ConfigReader):
         FilterReader._fillStream(stream, self.__opts, self.__name)
         for opt, value in list(self.__opts.items()):
             if opt == "logpath":
-                if self.__opts.get('backend', '').startswith("systemd"): continue
+                if self.__opts.get('backend', '').startswith("systemd"):
+                    continue
                 found_files = 0
                 for path in value.split("\n"):
                     path = path.rsplit(" ", 1)
@@ -264,7 +265,8 @@ class JailReader(ConfigReader):
             elif opt not in JailReader._ignoreOpts:
                 stream.append(["set", self.__name, opt, value])
         # consider options order (after other options):
-        if stream2: stream += stream2
+        if stream2:
+            stream += stream2
         for action in self.__actions:
             if isinstance(action, (ConfigReaderUnshared, ConfigReader)):
                 stream.extend(action.convert())
@@ -272,6 +274,7 @@ class JailReader(ConfigReader):
                 stream.append(action)
         stream.insert(0, ["add", self.__name, backend])
         return stream
+
 
 class JailDefError(Exception):
     pass

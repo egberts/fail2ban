@@ -47,16 +47,16 @@ except:
 
 PREFER_ENC = locale.getpreferredencoding()
 # correct preferred encoding if lang not set in environment:
-if PREFER_ENC.startswith('ANSI_'): # pragma: no cover
+if PREFER_ENC.startswith('ANSI_'):  # pragma: no cover
     if sys.stdout and sys.stdout.encoding is not None and not sys.stdout.encoding.startswith('ANSI_'):
         PREFER_ENC = sys.stdout.encoding
     elif all((os.getenv(v) in (None, "") for v in ('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG'))):
-        PREFER_ENC = 'UTF-8';
+        PREFER_ENC = 'UTF-8'
 
 # py-2.x: try to minimize influence of sporadic conversion errors on python 2.x,
 # caused by implicit converting of string/unicode (e. g. `str(u"\uFFFD")` produces an error
 # if default encoding is 'ascii');
-if sys.version_info < (3,): # pragma: 3.x no cover
+if sys.version_info < (3,):  # pragma: 3.x no cover
     # correct default (global system) encoding (mostly UTF-8):
     def __resetDefaultEncoding(encoding):
         global PREFER_ENC
@@ -68,7 +68,7 @@ if sys.version_info < (3,): # pragma: 3.x no cover
                 try:
                     from imp import load_dynamic as __ldm
                     _sys = __ldm('_sys', 'sys')
-                except ImportError: # pragma: no cover - only if load_dynamic fails
+                except ImportError:  # pragma: no cover - only if load_dynamic fails
                     reload(sys)
                     _sys = sys
             if hasattr(_sys, "setdefaultencoding"):
@@ -90,16 +90,17 @@ if sys.version_info < (3,): # pragma: 3.x no cover
 #   [True, True, False]; # -- python2
 #     [True, False, True]; # -- python3
 #
-if sys.version_info >= (3,): # pragma: 2.x no cover
+if sys.version_info >= (3,):  # pragma: 2.x no cover
     def uni_decode(x, enc=PREFER_ENC, errors='strict'):
         try:
             if isinstance(x, bytes):
                 return x.decode(enc, errors)
             return x
-        except (UnicodeDecodeError, UnicodeEncodeError): # pragma: no cover - unsure if reachable
+        except (UnicodeDecodeError, UnicodeEncodeError):  # pragma: no cover - unsure if reachable
             if errors != 'strict':
                 raise
             return x.decode(enc, 'replace')
+
     def uni_string(x):
         if not isinstance(x, bytes):
             return str(x)
@@ -173,9 +174,9 @@ class TraceBack(object):
         ftb = traceback.extract_stack(limit=100)[:-2]
         entries = [
             [mbasename(x[0]), os.path.dirname(x[0]), str(x[1])] for x in ftb]
-        entries = [ [e[0], e[2]] for e in entries
-                    if not (e[0] in ['unittest', 'logging.__init__']
-                            or e[1].endswith('/unittest'))]
+        entries = [[e[0], e[2]] for e in entries
+                   if not (e[0] in ['unittest', 'logging.__init__']
+                   or e[1].endswith('/unittest'))]
 
         # lets make it more concise
         entries_out = [entries[0]]
@@ -215,13 +216,15 @@ class FormatterWithTraceBack(logging.Formatter):
 
 
 logging.exitOnIOError = False
-def __stopOnIOError(logSys=None, logHndlr=None): # pragma: no cover
+
+
+def __stopOnIOError(logSys=None, logHndlr=None):  # pragma: no cover
     if logSys and len(logSys.handlers):
         logSys.removeHandler(logSys.handlers[0])
     if logHndlr:
         logHndlr.close = lambda: None
     logging.StreamHandler.flush = lambda self: None
-    #sys.excepthook = lambda *args: None
+    # sys.excepthook = lambda *args: None
     if logging.exitOnIOError:
         try:
             sys.stderr.close()
@@ -229,12 +232,15 @@ def __stopOnIOError(logSys=None, logHndlr=None): # pragma: no cover
             pass
         sys.exit(0)
 
+
 try:
     BrokenPipeError = BrokenPipeError
-except NameError: # pragma: 3.x no cover
+except NameError:  # pragma: 3.x no cover
     BrokenPipeError = IOError
 
 __origLog = logging.Logger._log
+
+
 def __safeLog(self, level, msg, args, **kwargs):
     """Safe log inject to avoid possible errors by unsafe log-handlers,
     concat, str. conversion, representation fails, etc.
@@ -249,11 +255,11 @@ def __safeLog(self, level, msg, args, **kwargs):
     try:
         # if isEnabledFor(level) already called...
         __origLog(self, level, msg, args, **kwargs)
-    except (BrokenPipeError, IOError) as e: # pragma: no cover
-        if e.errno == 32: # closed / broken pipe
+    except (BrokenPipeError, IOError) as e:  # pragma: no cover
+        if e.errno == 32:  # closed / broken pipe
             __stopOnIOError(self)
         raise
-    except Exception as e: # pragma: no cover - unreachable if log-handler safe in this python-version
+    except Exception as e:  # pragma: no cover - unreachable if log-handler safe in this python-version
         try:
             for args in (
                 ("logging failed: %r on %s", (e, uni_string(msg))),
@@ -261,23 +267,29 @@ def __safeLog(self, level, msg, args, **kwargs):
             ):
                 try:
                     __origLog(self, level, *args)
-                except: # pragma: no cover
+                except:  # pragma: no cover
                     pass
-        except: # pragma: no cover
+        except:  # pragma: no cover
             pass
-logging.Logger._log = __safeLog
 
+
+logging.Logger._log = __safeLog
 __origLogFlush = logging.StreamHandler.flush
+
+
 def __safeLogFlush(self):
     """Safe flush inject stopping endless logging on closed streams (redirected pipe).
     """
     try:
         __origLogFlush(self)
-    except (BrokenPipeError, IOError) as e: # pragma: no cover
-        if e.errno == 32: # closed / broken pipe
+    except (BrokenPipeError, IOError) as e:  # pragma: no cover
+        if e.errno == 32:  # closed / broken pipe
             __stopOnIOError(None, self)
         raise
+
+
 logging.StreamHandler.flush = __safeLogFlush
+
 
 def getLogger(name):
     """Get logging.Logger instance with Fail2Ban logger name convention
@@ -285,6 +297,7 @@ def getLogger(name):
     if "." in name:
         name = "fail2ban.%s" % name.rpartition(".")[-1]
     return logging.getLogger(name)
+
 
 def str2LogLevel(value):
     try:
@@ -296,10 +309,11 @@ def str2LogLevel(value):
         raise ValueError("Invalid log level %r" % value)
     return ll
 
+
 def getVerbosityFormat(verbosity, fmt=' %(message)s', addtime=True, padding=True):
     """Custom log format for the verbose runs
     """
-    if verbosity > 1: # pragma: no cover
+    if verbosity > 1:  # pragma: no cover
         if verbosity > 3:
             fmt = ' | %(module)15.15s-%(levelno)-2d: %(funcName)-20.20s |' + fmt
         if verbosity > 2:
@@ -308,7 +322,7 @@ def getVerbosityFormat(verbosity, fmt=' %(message)s', addtime=True, padding=True
             fmt = ' %(thread)X %(levelname)-5.5s' + fmt
             if addtime:
                 fmt = ' %(asctime)-15s' + fmt
-    else: # default (not verbose):
+    else:  # default (not verbose):
         fmt = "%(name)-24s[%(process)d]: %(levelname)-7s" + fmt
         if addtime:
             fmt = "%(asctime)s " + fmt
@@ -325,6 +339,7 @@ def excepthook(exctype, value, traceback):
         "Unhandled exception in Fail2Ban:", exc_info=True)
     return sys.__excepthook__(exctype, value, traceback)
 
+
 def splitwords(s):
     """Helper to split words on any comma, space, or a new line
 
@@ -335,7 +350,8 @@ def splitwords(s):
         return []
     return list(filter(bool, [v.strip() for v in re.split('[ ,\n]+', s)]))
 
-if sys.version_info >= (3,5):
+
+if sys.version_info >= (3, 5):
     eval(compile(r'''if 1:
     def _merge_dicts(x, y):
         """Helper to merge dicts.
@@ -358,6 +374,7 @@ else:
             r = x.copy()
             r.update(y)
         return r
+
     def _merge_copy_dicts(x, y):
         """Helper to merge dicts to guarantee a copy result (r is never x).
         """
@@ -380,7 +397,10 @@ OPTION_EXTRACT_CRE = re.compile(
     r'([\w\-_\.]+)=(?:"([^"]*)"|\'([^\']*)\'|([^,\]]*))(?:,|\]\s*\[|$)', re.DOTALL)
 # split by new-line considering possible new-lines within options [...]:
 OPTION_SPLIT_CRE = re.compile(
-    r'(?:[^\[\s]+(?:\s*\[\s*(?:[\w\-_\.]+=(?:"[^"]*"|\'[^\']*\'|[^,\]]*)\s*(?:,|\]\s*\[)?\s*)*\])?\s*|\S+)(?=\n\s*|\s+|$)', re.DOTALL)
+    r'(?:[^\[\s]+'
+    r'(?:\s*\[\s*(?:[\w\-_\.]+=(?:"[^"]*"|\'[^\']*\'|[^,\]]*)\s*(?:,|\]\s*\[)?\s*)*\])?'
+    r'\s*|\S+)(?=\n\s*|\s+|$)', re.DOTALL)
+
 
 def extractOptions(option):
     match = OPTION_CRE.match(option)
@@ -393,9 +413,10 @@ def extractOptions(option):
         for optmatch in OPTION_EXTRACT_CRE.finditer(optstr):
             opt = optmatch.group(1)
             value = [
-                val for val in optmatch.group(2,3,4) if val is not None][0]
+                val for val in optmatch.group(2, 3, 4) if val is not None][0]
             option_opts[opt.strip()] = value.strip()
     return option_name, option_opts
+
 
 def splitWithOptions(option):
     return OPTION_SPLIT_CRE.findall(option)
@@ -405,15 +426,17 @@ def splitWithOptions(option):
 # tags (<tag>) in tagged options.
 #
 
+
 # max tag replacement count (considering tag X in tag Y repeat):
 MAX_TAG_REPLACE_COUNT = 25
 
 # compiled RE for tag name (replacement name)
 TAG_CRE = re.compile(r'<([^ <>]+)>')
 
-def substituteRecursiveTags(inptags, conditional='',
-    ignore=(), addrepl=None
-):
+
+def substituteRecursiveTags(
+        inptags, conditional='',
+        ignore=(), addrepl=None):
     """Sort out tag definitions within other tags.
     Since v.0.9.2 supports embedded interpolation (see test cases for examples).
 
@@ -432,7 +455,7 @@ def substituteRecursiveTags(inptags, conditional='',
         Dictionary of tags(keys) and their values, with tags
         within the values recursively replaced.
     """
-    #logSys = getLogger("fail2ban")
+    # logSys = getLogger("fail2ban")
     tre_search = TAG_CRE.search
     tags = inptags
     # init:
@@ -446,9 +469,11 @@ def substituteRecursiveTags(inptags, conditional='',
         # substitute each value:
         for tag in list(tags.keys()):
             # ignore escaped or already done (or in ignore list):
-            if tag in ignore or tag in done: continue
+            if tag in ignore or tag in done:
+                continue
             # ignore replacing callable items from calling map - should be converted on demand only (by get):
-            if noRecRepl and callable(tags.getRawItem(tag)): continue
+            if noRecRepl and callable(tags.getRawItem(tag)):
+                continue
             value = orgval = uni_string(tags[tag])
             # search and replace all tags within value, that can be interpolated using other tags:
             m = tre_search(value)
@@ -461,10 +486,10 @@ def substituteRecursiveTags(inptags, conditional='',
                 if rtag in ignore:
                     m = tre_search(value, m.end())
                     continue
-                #logSys.log(5, 'found: %s' % rtag)
+                # logSys.log(5, 'found: %s' % rtag)
                 if rtag == tag or rplc.get(rtag, 1) > MAX_TAG_REPLACE_COUNT:
                     # recursive definitions are bad
-                    #logSys.log(5, 'recursion fail tag: %s value: %s' % (tag, value) )
+                    # logSys.log(5, 'recursion fail tag: %s value: %s' % (tag, value) )
                     raise ValueError(
                         "properties contain self referencing definitions "
                         "and cannot be resolved, fail tag: %s, found: %s in %s, value: %s" %
@@ -484,14 +509,15 @@ def substituteRecursiveTags(inptags, conditional='',
                     m = tre_search(value, m.end())
                     continue
                 # if calling map - be sure we've string:
-                if not isinstance(repl, basestring): repl = uni_string(repl)
+                if not isinstance(repl, basestring):
+                    repl = uni_string(repl)
                 value = value.replace('<%s>' % rtag, repl)
-                #logSys.log(5, 'value now: %s' % value)
+                # logSys.log(5, 'value now: %s' % value)
                 # increment reference count:
                 rplc[rtag] = rplc.get(rtag, 0) + 1
                 # the next match for replace:
                 m = tre_search(value, m.start())
-            #logSys.log(5, 'TAG: %s, newvalue: %s' % (tag, value))
+            # logSys.log(5, 'TAG: %s, newvalue: %s' % (tag, value))
             # was substituted?
             if orgval != value:
                 # check still contains any tag - should be repeated (possible embedded-recursive substitution):
@@ -503,7 +529,8 @@ def substituteRecursiveTags(inptags, conditional='',
                     tags = inptags.copy()
                 tags[tag] = value
             # no more sub tags (and no possible composite), add this tag to done set (just to be faster):
-            if '<' not in value: done.add(tag)
+            if '<' not in value:
+                done.add(tag)
         # stop interpolation, if no replacements anymore:
         if not repFlag:
             break
@@ -517,14 +544,14 @@ if _libcap:
         Side effect: name can be silently truncated to 15 bytes (16 bytes with NTS zero)
         """
         try:
-            if sys.version_info >= (3,): # pragma: 2.x no cover
+            if sys.version_info >= (3,):  # pragma: 2.x no cover
                 name = name.encode()
-            else: # pragma: 3.x no cover
+            else:  # pragma: 3.x no cover
                 name = bytes(name)
-            _libcap.prctl(15, name) # PR_SET_NAME = 15
-        except: # pragma: no cover
+            _libcap.prctl(15, name)  # PR_SET_NAME = 15
+        except:  # pragma: no cover
             pass
-else: # pragma: no cover
+else:  # pragma: no cover
     def prctl_set_th_name(name):
         pass
 
@@ -535,9 +562,9 @@ class BgService(object):
     Prevents memory leak on some platforms/python versions,
     using forced GC in periodical intervals.
     """
-
     _mutex = Lock()
     _instance = None
+
     def __new__(cls):
         if not cls._instance:
             cls._instance = \
@@ -547,13 +574,13 @@ class BgService(object):
     def __init__(self):
         self.__serviceTime = -0x7fffffff
         self.__periodTime = 30
-        self.__threshold = 100;
-        self.__count = self.__threshold;
+        self.__threshold = 100
+        self.__count = self.__threshold
         if hasattr(gc, 'set_threshold'):
             gc.set_threshold(0)
         # don't disable auto garbage, because of non-reference-counting python's (like pypy),
         # otherwise it may leak there on objects like unix-socket, etc.
-        #gc.disable()
+        # gc.disable()
 
     def service(self, force=False, wait=False):
         self.__count -= 1

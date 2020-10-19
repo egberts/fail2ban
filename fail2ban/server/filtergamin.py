@@ -60,7 +60,7 @@ class FilterGamin(FileFilter):
 		self.monitor = gamin.WatchMonitor()
 		fd = self.monitor.get_fd()
 		flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-		fcntl.fcntl(fd, fcntl.F_SETFD, flags|fcntl.FD_CLOEXEC)
+		fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
 		logSys.debug("Created FilterGamin")
 
 	def callback(self, path, event):
@@ -79,7 +79,7 @@ class FilterGamin(FileFilter):
 		this is a common logic and must be shared/provided by FileFilter
 		"""
 		self.getFailures(path)
-		if not self.banASAP: # pragma: no cover
+		if not self.banASAP:  # pragma: no cover
 			self.performBan()
 		self.__modified = False
 
@@ -120,12 +120,14 @@ class FilterGamin(FileFilter):
 		while self.active:
 			if self.idle:
 				# wait a little bit here for not idle, to prevent hi-load:
-				if not Utils.wait_for(lambda: not self.active or not self.idle,
-					self.sleeptime * 10, self.sleeptime
+				if not Utils.wait_for(
+						lambda: not self.active or not self.idle,
+						self.sleeptime * 10, self.sleeptime
 				):
 					self.ticks += 1
 					continue
-			Utils.wait_for(lambda: not self.active or self._handleEvents(),
+			Utils.wait_for(
+				lambda: not self.active or self._handleEvents(),
 				self.sleeptime)
 			self.ticks += 1
 		logSys.debug("[%s] filter terminated", self.jailName)

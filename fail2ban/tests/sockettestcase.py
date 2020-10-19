@@ -155,7 +155,8 @@ class Socket(LogCaptureTestCase):
         org_handler = RequestHandler.found_terminator
         try:
             RequestHandler.found_terminator = lambda self: self.close()
-            self.assertRaisesRegexp(Exception, r"reset by peer|Broken pipe",
+            self.assertRaisesRegexp(
+                Exception, r"reset by peer|Broken pipe",
                 lambda: client.send(testMessage, timeout=unittest.F2B.maxWaitTime(10)))
         finally:
             RequestHandler.found_terminator = org_handler
@@ -171,7 +172,7 @@ class Socket(LogCaptureTestCase):
         org_handler = RequestHandler.found_terminator
         try:
             RequestHandler.found_terminator = lambda self: TestMsgError()
-            #self.assertRaisesRegexp(Exception, r"reset by peer|Broken pipe", client.send, testMessage)
+            # self.assertRaisesRegexp(Exception, r"reset by peer|Broken pipe", client.send, testMessage)
             self.assertEqual(client.send(testMessage), 'ERROR: test unpickle error')
         finally:
             RequestHandler.found_terminator = org_handler
@@ -188,6 +189,7 @@ class Socket(LogCaptureTestCase):
         # replace poll handler to produce error in loop-cycle:
         org_poll = asyncore.poll
         err = {'cntr': 0}
+
         def _produce_error(*args):
             err['cntr'] += 1
             if err['cntr'] < 50:
@@ -203,11 +205,12 @@ class Socket(LogCaptureTestCase):
             # restore:
             asyncore.poll = org_poll
         # check errors were logged:
-        self.assertLogged("Server connection was closed: test errors in poll",
+        self.assertLogged(
+            "Server connection was closed: test errors in poll",
             "Too many errors - stop logging connection errors", all=True)
 
     def testSocketForce(self):
-        open(self.sock_name, 'w').close() # Create sock file
+        open(self.sock_name, 'w').close()  # Create sock file
         # Try to start without force
         self.assertRaises(
             AsyncServerException, self.server.start, self.sock_name, False)
@@ -227,8 +230,10 @@ class ClientMisc(LogCaptureTestCase):
 
     def testErrorsInLoop(self):
         phase = {'cntr': 0}
+
         def _active():
             return phase['cntr'] < 40
+
         def _poll(*args):
             phase['cntr'] += 1
             raise Exception('test *%d*' % phase['cntr'])

@@ -59,15 +59,15 @@ class BanTimeIncr(LogCaptureTestCase):
     def calcBanTime(self, banTime, banCount):
         return self.Observer.calcBanTime(self.__jail, banTime, banCount)
 
-    def testDefault(self, multipliers = None):
-        a = self.__jail;
+    def testDefault(self, multipliers=None):
+        a = self.__jail
         a.setBanTimeExtra('increment', 'true')
         self.assertEqual(a.getBanTimeExtra('increment'), True)
         a.setBanTimeExtra('maxtime', '1d')
         self.assertEqual(a.getBanTimeExtra('maxtime'), 24*60*60)
         a.setBanTimeExtra('rndtime', None)
         a.setBanTimeExtra('factor', None)
-        # tests formulat or multipliers:
+        # tests formula or multipliers:
         a.setBanTimeExtra('multipliers', multipliers)
         # test algorithm and max time 24 hours :
         self.assertEqual(
@@ -88,18 +88,18 @@ class BanTimeIncr(LogCaptureTestCase):
         )
         a.setBanTimeExtra('maxtime', '1d')
         # change factor :
-        a.setBanTimeExtra('factor', '2');
+        a.setBanTimeExtra('factor', '2')
         self.assertEqual(
             [a.calcBanTime(600, i) for i in range(1, 11)],
             [2400, 4800, 9600, 19200, 38400, 76800, 86400, 86400, 86400, 86400]
         )
         # factor is float :
-        a.setBanTimeExtra('factor', '1.33');
+        a.setBanTimeExtra('factor', '1.33')
         self.assertEqual(
             [int(a.calcBanTime(600, i)) for i in range(1, 11)],
             [1596, 3192, 6384, 12768, 25536, 51072, 86400, 86400, 86400, 86400]
         )
-        a.setBanTimeExtra('factor', None);
+        a.setBanTimeExtra('factor', None)
         # change max time :
         a.setBanTimeExtra('maxtime', '12h')
         self.assertEqual(
@@ -107,7 +107,7 @@ class BanTimeIncr(LogCaptureTestCase):
             [1200, 2400, 4800, 9600, 19200, 38400, 43200, 43200, 43200, 43200]
         )
         a.setBanTimeExtra('maxtime', '24h')
-        ## test randomization - not possibe all 10 times we have random = 0:
+        # test randomization - not possibe all 10 times we have random = 0:
         a.setBanTimeExtra('rndtime', '5m')
         self.assertTrue(
             False in [1200 in [a.calcBanTime(600, 1) for i in range(10)] for c in range(10)]
@@ -118,21 +118,22 @@ class BanTimeIncr(LogCaptureTestCase):
         )
         # restore default:
         a.setBanTimeExtra('multipliers', None)
-        a.setBanTimeExtra('factor', None);
+        a.setBanTimeExtra('factor', None)
         a.setBanTimeExtra('maxtime', '24h')
         a.setBanTimeExtra('rndtime', None)
 
     def testMultipliers(self):
         # this multipliers has the same values as default formula, we test stop growing after count 9:
         self.testDefault('1 2 4 8 16 32 64 128 256')
-        # this multipliers has exactly the same values as default formula, test endless growing (stops by count 31 only):
-        self.testDefault(' '.join([str(1<<i) for i in range(31)]))
+        # this multipliers has exactly the same values as default formula,
+        # test endless growing (stops by count 31 only):
+        self.testDefault(' '.join([str(1 << i) for i in range(31)]))
 
     def testFormula(self):
-        a = self.__jail;
+        a = self.__jail
         a.setBanTimeExtra('maxtime', '24h')
         a.setBanTimeExtra('rndtime', None)
-        ## use another formula:
+        # use another formula:
         a.setBanTimeExtra('formula', 'ban.Time * math.exp(float(ban.Count+1)*banFactor)/math.exp(1*banFactor)')
         a.setBanTimeExtra('factor', '2.0 / 2.885385')
         a.setBanTimeExtra('multipliers', None)
@@ -149,7 +150,7 @@ class BanTimeIncr(LogCaptureTestCase):
         )
         a.setBanTimeExtra('maxtime', '24h')
         # change factor :
-        a.setBanTimeExtra('factor', '1');
+        a.setBanTimeExtra('factor', '1')
         self.assertEqual(
             [int(a.calcBanTime(600, i)) for i in range(1, 11)],
             [1630, 4433, 12051, 32758, 86400, 86400, 86400, 86400, 86400, 86400]
@@ -162,7 +163,7 @@ class BanTimeIncr(LogCaptureTestCase):
             [1200, 2400, 4800, 9600, 19200, 38400, 43200, 43200, 43200, 43200]
         )
         a.setBanTimeExtra('maxtime', '24h')
-        ## test randomization - not possibe all 10 times we have random = 0:
+        # test randomization - not possibe all 10 times we have random = 0:
         a.setBanTimeExtra('rndtime', '5m')
         self.assertTrue(
             False in [1200 in [int(a.calcBanTime(600, 1)) for i in range(10)] for c in range(10)]
@@ -172,9 +173,9 @@ class BanTimeIncr(LogCaptureTestCase):
             False in [1200 in [int(a.calcBanTime(600, 1)) for i in range(10)] for c in range(10)]
         )
         # restore default:
-        a.setBanTimeExtra('factor', None);
+        a.setBanTimeExtra('factor', None)
         a.setBanTimeExtra('multipliers', None)
-        a.setBanTimeExtra('factor', None);
+        a.setBanTimeExtra('factor', None)
         a.setBanTimeExtra('maxtime', '24h')
         a.setBanTimeExtra('rndtime', None)
 
@@ -184,7 +185,7 @@ class BanTimeIncrDB(LogCaptureTestCase):
     def setUp(self):
         """Call before every test case."""
         super(BanTimeIncrDB, self).setUp()
-        if Fail2BanDb is None and sys.version_info >= (2,7): # pragma: no cover
+        if Fail2BanDb is None and sys.version_info >= (2, 7):  # pragma: no cover
             raise unittest.SkipTest(
                 "Unable to import fail2ban database module as sqlite is not "
                 "available.")
@@ -199,7 +200,7 @@ class BanTimeIncrDB(LogCaptureTestCase):
 
     def tearDown(self):
         """Call after every test case."""
-        if Fail2BanDb is None: # pragma: no cover
+        if Fail2BanDb is None:  # pragma: no cover
             return
         # Cleanup
         self.Observer.stop()
@@ -208,17 +209,16 @@ class BanTimeIncrDB(LogCaptureTestCase):
         super(BanTimeIncrDB, self).tearDown()
 
     def incrBanTime(self, ticket, banTime=None):
-        jail = self.jail;
+        jail = self.jail
         if banTime is None:
             banTime = ticket.getBanTime(jail.actions.getBanTime())
         ticket.setBanTime(None)
         incrTime = self.Observer.incrBanTime(jail, banTime, ticket)
-        #print("!!!!!!!!! banTime: %s, %s, incr: %s " % (banTime, ticket.getBanCount(), incrTime))
+        # print("!!!!!!!!! banTime: %s, %s, incr: %s " % (banTime, ticket.getBanCount(), incrTime))
         return incrTime
 
-
     def testBanTimeIncr(self):
-        if Fail2BanDb is None: # pragma: no cover
+        if Fail2BanDb is None:  # pragma: no cover
             return
         jail = self.jail
         self.db.addJail(jail)
@@ -240,7 +240,11 @@ class BanTimeIncrDB(LogCaptureTestCase):
         self.db.addBan(jail, ticket)
         # get a ticket already banned in this jail:
         self.assertEqual(
-            [(banCount, timeOfBan, lastBanTime) for banCount, timeOfBan, lastBanTime in self.db.getBan(ip, jail, None, False)],
+            [
+                (banCount, timeOfBan, lastBanTime)
+                for banCount, timeOfBan, lastBanTime
+                in self.db.getBan(ip, jail, None, False)
+            ],
             [(1, stime, 10)]
         )
         # incr time and ban a ticket again :
@@ -249,17 +253,29 @@ class BanTimeIncrDB(LogCaptureTestCase):
         self.db.addBan(jail, ticket)
         # get a ticket already banned in this jail:
         self.assertEqual(
-            [(banCount, timeOfBan, lastBanTime) for banCount, timeOfBan, lastBanTime in self.db.getBan(ip, jail, None, False)],
+            [
+                (banCount, timeOfBan, lastBanTime)
+                for banCount, timeOfBan, lastBanTime
+                in self.db.getBan(ip, jail, None, False)
+            ],
             [(2, stime + 15, 20)]
         )
         # get a ticket already banned in all jails:
         self.assertEqual(
-            [(banCount, timeOfBan, lastBanTime) for banCount, timeOfBan, lastBanTime in self.db.getBan(ip, '', None, True)],
+            [
+                (banCount, timeOfBan, lastBanTime)
+                for banCount, timeOfBan, lastBanTime
+                in self.db.getBan(ip, '', None, True)
+            ],
             [(2, stime + 15, 20)]
         )
         # check other optional parameters of getBan:
         self.assertEqual(
-            [(banCount, timeOfBan, lastBanTime) for banCount, timeOfBan, lastBanTime in self.db.getBan(ip, forbantime=stime, fromtime=stime)],
+            [
+                (banCount, timeOfBan, lastBanTime)
+                for banCount, timeOfBan, lastBanTime
+                in self.db.getBan(ip, forbantime=stime, fromtime=stime)
+            ],
             [(2, stime + 15, 20)]
         )
         # search currently banned and 1 day later (nothing should be found):
@@ -315,18 +331,26 @@ class BanTimeIncrDB(LogCaptureTestCase):
         self.assertEqual(len(restored_tickets), 2)
         self.assertEqual(
             str(restored_tickets[0]),
-            'FailTicket: ip=%s time=%s bantime=%s bancount=13 #attempts=0 matches=[]' % (ip, stime + lastBanTime + 5, lastBanTime)
+
+            'FailTicket: ip=%s time=%s bantime=%s bancount=13 '
+            '#attempts=0 matches=[]'
+            % (ip, stime + lastBanTime + 5, lastBanTime)
         )
         self.assertEqual(
             str(restored_tickets[1]),
-            'FailTicket: ip=%s time=%s bantime=%s bancount=1 #attempts=0 matches=[]' % (ip+'1', stime-24*60*60, 36*60*60)
+
+            'FailTicket: ip=%s time=%s bantime=%s bancount=1 '
+            '#attempts=0 matches=[]'
+            % (ip+'1', stime-24*60*60, 36*60*60)
         )
         # search out-dated (give another fromtime now is -18 hours):
         restored_tickets = self.db.getCurrentBans(fromtime=stime-18*60*60, correctBanTime=False)
         self.assertEqual(len(restored_tickets), 3)
         self.assertEqual(
             str(restored_tickets[2]),
-            'FailTicket: ip=%s time=%s bantime=%s bancount=1 #attempts=0 matches=[]' % (ip+'2', stime-24*60*60, 12*60*60)
+            'FailTicket: ip=%s time=%s bantime=%s bancount=1 '
+            '#attempts=0 matches=[]'
+            % (ip+'2', stime-24*60*60, 12*60*60)
         )
         # should be still banned
         self.assertFalse(restored_tickets[1].isTimedOut(stime))
@@ -336,7 +360,7 @@ class BanTimeIncrDB(LogCaptureTestCase):
         self.assertFalse(restored_tickets[2].isTimedOut(stime-18*60*60))
 
         # test permanent, create timed out:
-        ticket=FailTicket(ip+'3', stime-36*60*60, [])
+        ticket = FailTicket(ip+'3', stime-36*60*60, [])
         self.assertTrue(ticket.isTimedOut(stime, 600))
         # not timed out - permanent jail:
         self.assertFalse(ticket.isTimedOut(stime, -1))
@@ -431,27 +455,38 @@ class BanTimeIncrDB(LogCaptureTestCase):
         jail1.restoreCurrentBans(correctBanTime=False)
         ticket = jail1.getFailTicket()
         self.assertTrue(ticket.restored)
-        self.assertEqual(str(ticket),
-            'FailTicket: ip=%s time=%s bantime=%s bancount=1 #attempts=0 matches=[]' % (ip, stime, 6000)
+        self.assertEqual(
+            str(ticket),
+
+            'FailTicket: ip=%s time=%s bantime=%s bancount=1 '
+            '#attempts=0 matches=[]'
+            % (ip, stime, 6000)
         )
-        # jail2 does not restore any bans (because all ban tickets should be already expired: stime-6000):
+        # jail2 does not restore any bans (because all ban tickets should be
+        # already expired: stime-6000):
         jail2.restoreCurrentBans(correctBanTime=False)
         self.assertEqual(jail2.getFailTicket(), False)
-        # test again, but now normally (with maximum ban-time of restored ticket = allowed 10m = 600):
+        # test again, but now normally (with maximum ban-time of restored
+        # ticket = allowed 10m = 600):
         jail1.setBanTimeExtra('maxtime', '10m')
         jail1.restoreCurrentBans()
         ticket = jail1.getFailTicket()
         self.assertTrue(ticket.restored)
         # ticket restored, but it has new time = 600 (current ban-time of jail, as maximum):
-        self.assertEqual(str(ticket),
-            'FailTicket: ip=%s time=%s bantime=%s bancount=1 #attempts=0 matches=[]' % (ip, stime, 600)
+        self.assertEqual(
+            str(ticket),
+
+            'FailTicket: ip=%s time=%s bantime=%s bancount=1 '
+            '#attempts=0 matches=[]'
+            % (ip, stime, 600)
         )
-        # jail2 does not restore any bans (because all ban tickets should be already expired: stime-6000):
+        # jail2 does not restore any bans (because all ban tickets should be
+        # already expired: stime-6000):
         jail2.restoreCurrentBans()
         self.assertEqual(jail2.getFailTicket(), False)
 
     def testObserver(self):
-        if Fail2BanDb is None: # pragma: no cover
+        if Fail2BanDb is None:  # pragma: no cover
             return
         jail = self.jail
         self.db.addJail(jail)
@@ -468,7 +503,7 @@ class BanTimeIncrDB(LogCaptureTestCase):
         # purge database right now, but using timer, to test it also:
         self.db._purgeAge = -240*60*60
         obs.add_named_timer('DB_PURGE', 0.001, 'db_purge')
-        self.assertLogged("Purge database event occurred", wait=True); # wait for purge timer
+        self.assertLogged("Purge database event occurred", wait=True)  # wait for purge timer
         # wait for timer ready
         obs.wait_idle(0.025)
         # wait for ready
@@ -564,6 +599,7 @@ class BanTimeIncrDB(LogCaptureTestCase):
         # stop observer
         obs.stop()
 
+
 class ObserverTest(LogCaptureTestCase):
 
     def setUp(self):
@@ -612,7 +648,7 @@ class ObserverTest(LogCaptureTestCase):
     def testObserverBadRun(self):
         obs = ObserverTest._BadObserver()
         # don't wait for empty by stop
-        obs.wait_empty = lambda v:()
+        obs.wait_empty = lambda v: ()
         # save previous hook, prevent write stderr and check hereafter __excepthook__ was executed
         prev_exchook = sys.__excepthook__
         x = []
@@ -621,7 +657,11 @@ class ObserverTest(LogCaptureTestCase):
             obs.start()
             obs.stop()
             obs.join()
-            self.assertTrue( Utils.wait_for( lambda: len(x) and self._is_logged("Unhandled exception"), 3) )
+            self.assertTrue(
+                Utils.wait_for(
+                    lambda: len(x) and self._is_logged("Unhandled exception"),
+                    3)
+            )
         finally:
             sys.__excepthook__ = prev_exchook
         self.assertLogged("Unhandled exception")

@@ -21,11 +21,15 @@
 #
 
 __author__ = "Cyril Jaquier, Yaroslav Halchenko, Steven Hiscocks, Daniel Black"
-__copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2005-2016 Yaroslav Halchenko, 2013-2014 Steven Hiscocks, Daniel Black"
+__copyright__ = "Copyright (c) 2004 Cyril Jaquier, 2005-2016 Yaroslav Halchenko, " + \
+                 "2013-2014 Steven Hiscocks, Daniel Black"
 __license__ = "GPL-v2+"
 
 version = "1.0.1.dev1"
 
+
 def normVersion():
-  """ Returns fail2ban version in normalized machine-readable format"""
-  return version.replace('.fix', '').replace('.dev', '.')
+    """
+    Returns fail2ban version in normalized machine-readable format
+    """
+    return version.replace('.fix', '').replace('.dev', '.')

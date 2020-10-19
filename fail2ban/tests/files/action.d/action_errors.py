@@ -19,4 +19,5 @@ class TestAction(ActionBase):
     def unban(self):
         raise Exception()
 
+
 Action = TestAction
